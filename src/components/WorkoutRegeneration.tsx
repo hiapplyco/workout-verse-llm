@@ -2,11 +2,12 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { WorkoutRegenerationForm } from "./WorkoutRegenerationForm";
+import { WorkoutPreview } from "./WorkoutPreview";
 import { useMutation } from "@tanstack/react-query";
 import { workoutAgents } from "@/services/workoutAgents";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
+import { saveWorkoutHistory, updateWorkoutHistory } from "@/services/workoutMutations";
 
 interface WorkoutRegenerationProps {
   workout: {
@@ -36,7 +37,6 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError || !user) {
-        console.error('Authentication error:', authError);
         throw new Error('You must be logged in to modify workouts');
       }
 
@@ -50,17 +50,13 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       };
 
       try {
-        const { error: historyError } = await supabase
-          .from('workout_history')
-          .insert({
-            workout_id: workout.id,
-            user_id: user.id,
-            prompt: prompt,
-            previouswod: originalWorkout.wod,
-            newwod: originalWorkout.wod,
-          });
-
-        if (historyError) throw historyError;
+        await saveWorkoutHistory(
+          workout.id,
+          user.id,
+          prompt,
+          originalWorkout.wod,
+          originalWorkout.wod
+        );
 
         const [warmupResponse, wodResponse, notesResponse] = await Promise.all([
           workoutAgents.generateWarmup(originalWorkout, prompt, workout.day),
@@ -76,15 +72,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
         console.log('Generated new workout content:', newWorkout);
 
-        const { error: updateHistoryError } = await supabase
-          .from('workout_history')
-          .update({ newwod: newWorkout.wod })
-          .eq('workout_id', workout.id)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (updateHistoryError) throw updateHistoryError;
+        await updateWorkoutHistory(workout.id, user.id, newWorkout.wod);
 
         return newWorkout;
       } catch (error) {
@@ -115,7 +103,6 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       toast.error("Please enter how you'd like to modify the workout");
       return;
     }
-
     debouncedRegenerate(userPrompt);
   };
 
@@ -138,62 +125,23 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         onRegenerate={handleRegenerate}
       />
 
-      {workoutContent.warmup !== null && (
-        <div className="rounded border-2 border-primary bg-background p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase text-secondary">New Warmup</h3>
-            <div className="space-x-2">
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => handleApplyChanges("warmup", workoutContent.warmup)}
-                className="bg-primary text-white hover:bg-primary/90"
-              >
-                Apply Changes
-              </Button>
-            </div>
-          </div>
-          <p className="whitespace-pre-wrap font-medium text-black">{workoutContent.warmup}</p>
-        </div>
-      )}
+      <WorkoutPreview
+        type="warmup"
+        content={workoutContent.warmup}
+        onApply={(value) => handleApplyChanges("warmup", value)}
+      />
 
-      {workoutContent.wod !== null && (
-        <div className="rounded border-2 border-primary bg-background p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase text-secondary">New WOD</h3>
-            <div className="space-x-2">
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => handleApplyChanges("wod", workoutContent.wod)}
-                className="bg-primary text-white hover:bg-primary/90"
-              >
-                Apply Changes
-              </Button>
-            </div>
-          </div>
-          <p className="whitespace-pre-wrap font-medium text-black">{workoutContent.wod}</p>
-        </div>
-      )}
+      <WorkoutPreview
+        type="wod"
+        content={workoutContent.wod}
+        onApply={(value) => handleApplyChanges("wod", value)}
+      />
 
-      {workoutContent.notes !== null && (
-        <div className="rounded border-2 border-primary bg-background p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase text-secondary">New Notes</h3>
-            <div className="space-x-2">
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => handleApplyChanges("notes", workoutContent.notes)}
-                className="bg-primary text-white hover:bg-primary/90"
-              >
-                Apply Changes
-              </Button>
-            </div>
-          </div>
-          <p className="whitespace-pre-wrap font-medium text-black">{workoutContent.notes}</p>
-        </div>
-      )}
+      <WorkoutPreview
+        type="notes"
+        content={workoutContent.notes}
+        onApply={(value) => handleApplyChanges("notes", value)}
+      />
 
       {regenerateWorkoutMutation.isPending && (
         <div className="flex items-center justify-center space-x-2 py-4">
