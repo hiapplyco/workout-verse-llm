@@ -84,7 +84,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-card">
+    <div className="min-h-screen bg-white">
       <nav className="border-b-2 border-primary bg-card px-6 py-4">
         <h1 className="text-2xl font-black uppercase tracking-tight text-primary">Best App of Their Day</h1>
       </nav>

@@ -17,7 +17,7 @@ interface WorkoutCardProps {
 
 const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardProps) => {
   return (
-    <Card className="relative w-full animate-fade-in border-2 border-primary bg-background">
+    <Card className="relative w-full animate-fade-in border-2 border-primary bg-white">
       <CardHeader className="relative border-b-2 border-primary bg-card">
         <CardTitle className="text-xl font-black uppercase tracking-tight text-primary">
           {workout.day}
@@ -54,14 +54,14 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
         <div className="flex gap-2">
           <Button 
             onClick={onRegenerate} 
-            className="flex-1 border-2 border-primary bg-background font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-background"
+            className="flex-1 border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
             Regenerate
           </Button>
           <Button 
             onClick={onSpeak} 
-            className="flex-1 border-2 border-accent bg-background font-bold uppercase tracking-tight text-accent transition-colors hover:bg-accent hover:text-background"
+            className="flex-1 border-2 border-accent bg-card font-bold uppercase tracking-tight text-accent transition-colors hover:bg-accent hover:text-white"
           >
             <Volume2 className="mr-2 h-4 w-4" />
             Speak
