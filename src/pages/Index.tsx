@@ -1,21 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import WorkoutCard from "@/components/WorkoutCard";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Wand2, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { initialWorkouts } from "@/data/initialWorkouts";
 import { format } from "date-fns";
-
-type Workout = {
-  id: string;
-  day: string;
-  warmup: string;
-  wod: string;
-  notes: string;
-};
+import { Navigation } from "@/components/Navigation";
+import { WeeklyPromptForm } from "@/components/WeeklyPromptForm";
+import { WorkoutList } from "@/components/WorkoutList";
+import type { Workout } from "@/types/workout";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -84,15 +76,6 @@ const Index = () => {
     checkUser();
   }, [navigate]);
 
-  const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Error signing out");
-    } else {
-      navigate("/auth");
-    }
-  };
-
   const handleChange = async (index: number, key: string, value: string) => {
     const newWorkouts = [...workouts];
     newWorkouts[index] = { ...newWorkouts[index], [key]: value };
@@ -148,7 +131,6 @@ const Index = () => {
       if (error) throw error;
 
       if (Array.isArray(data) && data.length === 5) {
-        // Update workouts in Supabase
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
@@ -179,55 +161,19 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <nav className="border-b-2 border-primary bg-card px-6 py-4 flex justify-between items-center">
-        <h1 className="text-2xl font-black uppercase tracking-tight text-primary">
-          Best App of Their Day
-        </h1>
-        <Button
-          variant="outline"
-          onClick={handleSignOut}
-          className="border-2 border-primary font-medium"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sign Out
-        </Button>
-      </nav>
-
+      <Navigation />
       <main className="container py-8">
-        <div className="mb-8 space-y-4">
-          <h2 className="text-3xl font-black uppercase tracking-tight text-primary">
-            Weekly Workout Plan
-          </h2>
-          
-          <div className="flex gap-4">
-            <Input
-              placeholder="How would you like to customize this week's workouts?"
-              value={weeklyPrompt}
-              onChange={(e) => setWeeklyPrompt(e.target.value)}
-              className="border-2 border-accent bg-card font-medium text-white"
-            />
-            <Button
-              onClick={generateWeeklyWorkouts}
-              disabled={isGenerating}
-              className="border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
-            >
-              <Wand2 className="mr-2 h-4 w-4" />
-              {isGenerating ? "Generating..." : "Generate Week"}
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {workouts.map((workout, index) => (
-            <WorkoutCard
-              key={workout.id}
-              workout={workout}
-              onChange={(key, value) => handleChange(index, key, value)}
-              onSpeak={() => handleSpeakPlan(workout)}
-            />
-          ))}
-        </div>
-
+        <WeeklyPromptForm
+          weeklyPrompt={weeklyPrompt}
+          isGenerating={isGenerating}
+          onPromptChange={setWeeklyPrompt}
+          onGenerate={generateWeeklyWorkouts}
+        />
+        <WorkoutList
+          workouts={workouts}
+          onWorkoutChange={handleChange}
+          onWorkoutSpeak={handleSpeakPlan}
+        />
         <audio ref={audioRef} hidden />
       </main>
     </div>
