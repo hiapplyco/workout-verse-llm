@@ -30,10 +30,12 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       console.log('Starting workout regeneration for:', workout.day);
       console.log('User prompt:', prompt);
 
-      // Clear the existing workout fields immediately
-      onChange("warmUp", "");
-      onChange("wod", "");
-      onChange("notes", "");
+      // Clear the fields immediately using setTimeout to ensure it happens in a separate tick
+      setTimeout(() => {
+        onChange("warmUp", "");
+        onChange("wod", "");
+        onChange("notes", "");
+      }, 0);
 
       const requestBody = {
         warmUp: workout.warmUp,
