@@ -35,7 +35,13 @@ serve(async (req) => {
       
       Keep the same general structure but modify according to the user's request.
       If no specific request is given, make it more challenging.
-      Ensure the response is valid JSON.
+      Ensure all three sections (warmUp, wod, and notes) are included in the response.
+      Make sure the response is valid JSON.
+      Format the text to be natural for speech synthesis by:
+      - Using "or" instead of "/"
+      - Using "to" instead of "-"
+      - Using complete sentences
+      - Avoiding special characters
     `;
 
     const result = await model.generateContent(prompt);
@@ -49,6 +55,11 @@ serve(async (req) => {
     }
     
     const modifiedWorkout = JSON.parse(jsonMatch[0]);
+
+    // Ensure all fields are present
+    if (!modifiedWorkout.warmUp || !modifiedWorkout.wod || !modifiedWorkout.notes) {
+      throw new Error('Incomplete workout data received from AI');
+    }
 
     return new Response(JSON.stringify(modifiedWorkout), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

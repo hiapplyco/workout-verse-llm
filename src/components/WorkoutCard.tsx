@@ -76,9 +76,10 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
       if (error) throw error;
 
       if (data) {
-        onChange("warmUp", data.warmUp);
-        onChange("wod", data.wod);
-        if (data.notes) onChange("notes", data.notes);
+        // Update all sections with the regenerated content
+        onChange("warmUp", data.warmUp || workout.warmUp);
+        onChange("wod", data.wod || workout.wod);
+        onChange("notes", data.notes || workout.notes);
         setUserPrompt("");
         toast.success("Workout regenerated successfully!");
       }
