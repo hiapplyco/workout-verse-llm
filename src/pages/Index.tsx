@@ -38,27 +38,6 @@ const Index = () => {
   const [workouts, setWorkouts] = useState(initialWorkouts);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const callGeminiForNewPlan = async (currentWorkout: typeof initialWorkouts[0], userPrompt: string) => {
-    // Placeholder for Gemini API call
-    // In a real implementation, you would use the userPrompt to generate a new workout
-    return {
-      ...currentWorkout,
-      wod: `${currentWorkout.wod} (Modified based on: ${userPrompt})`
-    };
-  };
-
-  const callElevenLabsTTS = async (text: string) => {
-    // Placeholder for ElevenLabs API call
-    return "/placeholder-voice.mp3";
-  };
-
-  const handleRegenerate = async (index: number) => {
-    const newWorkouts = [...workouts];
-    const updatedWorkout = await callGeminiForNewPlan(newWorkouts[index], "Make it more challenging");
-    newWorkouts[index] = updatedWorkout;
-    setWorkouts(newWorkouts);
-  };
-
   const handleChange = (index: number, key: string, value: string) => {
     const newWorkouts = [...workouts];
     newWorkouts[index] = { ...newWorkouts[index], [key]: value };
@@ -74,13 +53,18 @@ const Index = () => {
     `;
 
     try {
-      const audioURL = await callElevenLabsTTS(speechText);
-      if (audioRef.current) {
-        audioRef.current.src = audioURL;
-        audioRef.current.play();
+      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        body: { text: speechText }
+      });
+
+      if (error) throw error;
+
+      if (data?.audioContent && audioRef.current) {
+        audioRef.current.src = `data:audio/mp3;base64,${data.audioContent}`;
+        await audioRef.current.play();
       }
     } catch (error) {
-      console.error("Error calling ElevenLabs TTS:", error);
+      console.error("Error calling text-to-speech:", error);
     }
   };
 
@@ -98,7 +82,6 @@ const Index = () => {
             <WorkoutCard
               key={index}
               workout={workout}
-              onRegenerate={() => handleRegenerate(index)}
               onChange={(key, value) => handleChange(index, key, value)}
               onSpeak={() => handleSpeakPlan(workout)}
             />

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { RefreshCw, Volume2, MessageSquarePlus } from "lucide-react";
+import { Volume2, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,21 +14,14 @@ interface WorkoutCardProps {
     wod: string;
     notes: string;
   };
-  onRegenerate: () => void;
   onChange: (key: string, value: string) => void;
   onSpeak: () => void;
 }
 
-const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardProps) => {
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [userPrompt, setUserPrompt] = useState("");
+const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
   const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
-
-  const handleRegenerate = () => {
-    onRegenerate();
-    setShowPrompt(false);
-    setUserPrompt("");
-  };
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [userPrompt, setUserPrompt] = useState("");
 
   const handleSpeak = async () => {
     setIsGeneratingVoice(true);
@@ -50,6 +43,35 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
       toast.error("Failed to generate speech. Please try again.");
     } finally {
       setIsGeneratingVoice(false);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    setIsRegenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('regenerate-workout', {
+        body: {
+          warmUp: workout.warmUp,
+          wod: workout.wod,
+          notes: workout.notes,
+          userPrompt: userPrompt
+        }
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        onChange("warmUp", data.warmUp);
+        onChange("wod", data.wod);
+        if (data.notes) onChange("notes", data.notes);
+        setUserPrompt("");
+        toast.success("Workout regenerated successfully!");
+      }
+    } catch (error) {
+      console.error('Error regenerating workout:', error);
+      toast.error("Failed to regenerate workout. Please try again.");
+    } finally {
+      setIsRegenerating(false);
     }
   };
 
@@ -100,31 +122,20 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
 
           <Button 
             onClick={handleRegenerate}
-            className="border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white"
+            disabled={isRegenerating}
+            className="border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            Regenerate
+            {isRegenerating ? "Regenerating..." : "Regenerate"}
           </Button>
         </div>
 
-        <Button 
-          onClick={() => setShowPrompt(!showPrompt)} 
-          className="w-full border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white"
-        >
-          <MessageSquarePlus className="mr-2 h-4 w-4" />
-          Do you want to change it up?
-        </Button>
-
-        {showPrompt && (
-          <div className="space-y-2">
-            <Input
-              placeholder="Describe how you'd like to modify this workout..."
-              value={userPrompt}
-              onChange={(e) => setUserPrompt(e.target.value)}
-              className="border-2 border-accent bg-card font-medium text-white"
-            />
-          </div>
-        )}
+        <Input
+          placeholder="Describe how you'd like to modify this workout (optional)..."
+          value={userPrompt}
+          onChange={(e) => setUserPrompt(e.target.value)}
+          className="border-2 border-accent bg-card font-medium text-white"
+        />
       </CardContent>
     </Card>
   );
