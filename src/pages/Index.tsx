@@ -1,6 +1,10 @@
 import { useState, useRef } from "react";
 import WorkoutCard from "@/components/WorkoutCard";
 import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Wand2 } from "lucide-react";
+import { toast } from "sonner";
 
 const initialWorkouts = [
   {
@@ -37,6 +41,8 @@ const initialWorkouts = [
 
 const Index = () => {
   const [workouts, setWorkouts] = useState(initialWorkouts);
+  const [weeklyPrompt, setWeeklyPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const handleChange = (index: number, key: string, value: string) => {
@@ -69,6 +75,35 @@ const Index = () => {
     }
   };
 
+  const generateWeeklyWorkouts = async () => {
+    if (!weeklyPrompt.trim()) {
+      toast.error("Please enter how you'd like to customize the weekly workouts");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-weekly-workouts', {
+        body: { weeklyPrompt }
+      });
+
+      if (error) throw error;
+
+      if (Array.isArray(data) && data.length === 5) {
+        setWorkouts(data);
+        setWeeklyPrompt("");
+        toast.success("Weekly workout plan generated successfully!");
+      } else {
+        throw new Error('Invalid response format from generate-weekly-workouts');
+      }
+    } catch (error) {
+      console.error('Error generating weekly workouts:', error);
+      toast.error("Failed to generate weekly workouts. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <nav className="border-b-2 border-primary bg-card px-6 py-4">
@@ -76,7 +111,26 @@ const Index = () => {
       </nav>
 
       <main className="container py-8">
-        <h2 className="mb-8 text-3xl font-black uppercase tracking-tight text-primary">Weekly Workout Plan</h2>
+        <div className="mb-8 space-y-4">
+          <h2 className="text-3xl font-black uppercase tracking-tight text-primary">Weekly Workout Plan</h2>
+          
+          <div className="flex gap-4">
+            <Input
+              placeholder="How would you like to customize this week's workouts?"
+              value={weeklyPrompt}
+              onChange={(e) => setWeeklyPrompt(e.target.value)}
+              className="border-2 border-accent bg-card font-medium text-white"
+            />
+            <Button
+              onClick={generateWeeklyWorkouts}
+              disabled={isGenerating}
+              className="border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
+            >
+              <Wand2 className="mr-2 h-4 w-4" />
+              {isGenerating ? "Generating..." : "Generate Week"}
+            </Button>
+          </div>
+        </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {workouts.map((workout, index) => (
