@@ -26,7 +26,17 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
   const handleSpeak = async () => {
     setIsGeneratingVoice(true);
     try {
-      const speechText = `Today is ${workout.day}. For warm up: ${workout.warmUp}. Workout of the day: ${workout.wod}. ${workout.notes ? `Important notes: ${workout.notes}.` : ''}`;
+      // Format text for natural speech by replacing special characters
+      const formatForSpeech = (text: string) => {
+        return text
+          .replace(/\//g, ' or ')
+          .replace(/-/g, ' to ')
+          .replace(/\n/g, '. ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      };
+
+      const speechText = `Today is ${workout.day}. For warm up: ${formatForSpeech(workout.warmUp)}. Workout of the day: ${formatForSpeech(workout.wod)}. ${workout.notes ? `Important notes: ${formatForSpeech(workout.notes)}.` : ''}`;
 
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
         body: { text: speechText }
@@ -47,6 +57,11 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
   };
 
   const handleRegenerate = async () => {
+    if (!userPrompt.trim()) {
+      toast.error("Please enter how you'd like to modify the workout");
+      return;
+    }
+
     setIsRegenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('regenerate-workout', {
@@ -110,32 +125,32 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Button 
-            onClick={handleSpeak}
-            disabled={isGeneratingVoice}
-            className="border-2 border-accent bg-card font-bold uppercase tracking-tight text-accent transition-colors hover:bg-accent hover:text-white disabled:opacity-50"
-          >
-            <Volume2 className="mr-2 h-4 w-4" />
-            {isGeneratingVoice ? "Generating..." : "Speak Workout"}
-          </Button>
+        <Button 
+          onClick={handleSpeak}
+          disabled={isGeneratingVoice}
+          className="w-full border-2 border-accent bg-card font-bold uppercase tracking-tight text-accent transition-colors hover:bg-accent hover:text-white disabled:opacity-50"
+        >
+          <Volume2 className="mr-2 h-4 w-4" />
+          {isGeneratingVoice ? "Generating..." : "Speak Workout"}
+        </Button>
 
+        <div className="space-y-2">
+          <Input
+            placeholder="How would you like to modify this workout?"
+            value={userPrompt}
+            onChange={(e) => setUserPrompt(e.target.value)}
+            className="border-2 border-accent bg-card font-medium text-white"
+          />
+          
           <Button 
             onClick={handleRegenerate}
             disabled={isRegenerating}
-            className="border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
+            className="w-full border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            {isRegenerating ? "Regenerating..." : "Regenerate"}
+            {isRegenerating ? "Regenerating..." : "Regenerate Workout"}
           </Button>
         </div>
-
-        <Input
-          placeholder="Describe how you'd like to modify this workout (optional)..."
-          value={userPrompt}
-          onChange={(e) => setUserPrompt(e.target.value)}
-          className="border-2 border-accent bg-card font-medium text-white"
-        />
       </CardContent>
     </Card>
   );
