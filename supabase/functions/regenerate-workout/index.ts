@@ -32,12 +32,14 @@ serve(async (req) => {
       Create a new workout that incorporates the user's request.
       If they want a rest day, provide an active recovery workout instead.
       
-      Return ONLY a JSON object with this exact format, no additional text or explanation:
+      You must respond with a valid JSON object containing exactly these three fields:
       {
         "warmUp": "detailed warm-up plan",
         "wod": "workout of the day",
         "notes": "specific coaching notes"
       }
+      
+      All three fields must be non-empty strings. Do not include any additional text or explanation outside the JSON object.
     `;
 
     console.log('Sending prompt to Gemini');
@@ -72,18 +74,22 @@ serve(async (req) => {
 
     const { warmUp: newWarmUp, wod: newWod, notes: newNotes } = modifiedWorkout;
 
-    // Strict type checking and conversion
-    const validatedWorkout = {
-      warmUp: String(newWarmUp || ''),
-      wod: String(newWod || ''),
-      notes: String(newNotes || '')
-    };
-
-    // Final validation
-    if (!validatedWorkout.warmUp || !validatedWorkout.wod || !validatedWorkout.notes) {
-      console.error('Missing required fields in response:', validatedWorkout);
-      throw new Error('Missing required fields in Gemini response');
+    // Validate each field is present and non-empty
+    if (!newWarmUp || typeof newWarmUp !== 'string' || newWarmUp.trim() === '') {
+      throw new Error('Warm-up field is missing or empty');
     }
+    if (!newWod || typeof newWod !== 'string' || newWod.trim() === '') {
+      throw new Error('WOD field is missing or empty');
+    }
+    if (!newNotes || typeof newNotes !== 'string' || newNotes.trim() === '') {
+      throw new Error('Notes field is missing or empty');
+    }
+
+    const validatedWorkout = {
+      warmUp: newWarmUp.trim(),
+      wod: newWod.trim(),
+      notes: newNotes.trim()
+    };
 
     console.log('Sending validated workout to frontend:', validatedWorkout);
     
