@@ -26,7 +26,7 @@ const Index = () => {
       // Fetch existing workouts for the user
       const { data: existingWorkouts } = await supabase
         .from('workouts')
-        .select('id, day')
+        .select('id, day, warm_up, wod, notes')
         .eq('user_id', user.id);
 
       // If no workouts exist for the user, insert the initial workouts
@@ -35,7 +35,6 @@ const Index = () => {
         const workoutsToInsert = initialWorkouts.map(workout => ({
           ...workout,
           user_id: user.id,
-          warm_up: workout.warmUp, // Match the database column name
         }));
 
         const { error: insertError } = await supabase
@@ -51,6 +50,7 @@ const Index = () => {
         toast.success('Initial workouts created successfully!');
       } else {
         console.log('Existing workouts found:', existingWorkouts);
+        setWorkouts(existingWorkouts);
       }
     };
 
@@ -75,7 +75,7 @@ const Index = () => {
   const handleSpeakPlan = async (workout: typeof initialWorkouts[0]) => {
     const speechText = `
       Today is ${workout.day}.
-      Warm Up: ${workout.warmUp}.
+      Warm Up: ${workout.warm_up}.
       Workout Of the Day: ${workout.wod}.
       Notes: ${workout.notes}.
     `;

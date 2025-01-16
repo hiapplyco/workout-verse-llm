@@ -18,7 +18,7 @@ interface WorkoutCardProps {
   onSpeak: () => void;
 }
 
-const WorkoutCard = ({ workout, onChange }: WorkoutCardProps) => {
+const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
   const handleExportToCalendar = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
