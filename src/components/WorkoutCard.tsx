@@ -64,6 +64,13 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
 
     setIsRegenerating(true);
     try {
+      console.log('Sending regenerate request with:', {
+        warmUp: workout.warmUp,
+        wod: workout.wod,
+        notes: workout.notes,
+        userPrompt
+      });
+
       const { data, error } = await supabase.functions.invoke('regenerate-workout', {
         body: {
           warmUp: workout.warmUp,
@@ -75,13 +82,23 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
 
       if (error) throw error;
 
-      if (data) {
-        // Update all sections with the regenerated content
-        onChange("warmUp", data.warmUp || workout.warmUp);
-        onChange("wod", data.wod || workout.wod);
-        onChange("notes", data.notes || workout.notes);
+      console.log('Received regenerated workout:', data);
+
+      if (data && typeof data === 'object') {
+        // Update each section individually to ensure all changes are applied
+        if (data.warmUp && data.warmUp !== workout.warmUp) {
+          onChange("warmUp", data.warmUp);
+        }
+        if (data.wod && data.wod !== workout.wod) {
+          onChange("wod", data.wod);
+        }
+        if (data.notes && data.notes !== workout.notes) {
+          onChange("notes", data.notes);
+        }
         setUserPrompt("");
         toast.success("Workout regenerated successfully!");
+      } else {
+        throw new Error('Invalid response format from regenerate-workout');
       }
     } catch (error) {
       console.error('Error regenerating workout:', error);
