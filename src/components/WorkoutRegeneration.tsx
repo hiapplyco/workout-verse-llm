@@ -101,11 +101,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
     },
     onSuccess: (data) => {
       console.log('Setting workout content with:', data);
-      setWorkoutContent({
-        warmup: data.warmup,
-        wod: data.wod,
-        notes: data.notes
-      });
+      setWorkoutContent(data);
     },
     onError: (error: Error) => {
       console.error('Error regenerating workout:', error);
@@ -146,7 +142,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       />
 
       {/* Preview sections */}
-      {workoutContent.warmup && (
+      {workoutContent.warmup !== null && (
         <div className="rounded border-2 border-primary bg-background p-4">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-bold uppercase text-secondary">New Warmup</h3>
@@ -154,7 +150,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleApplyChanges("warmup", workoutContent.warmup!)}
+                onClick={() => handleApplyChanges("warmup", workoutContent.warmup)}
               >
                 Apply Changes
               </Button>
@@ -164,7 +160,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         </div>
       )}
 
-      {workoutContent.wod && (
+      {workoutContent.wod !== null && (
         <div className="rounded border-2 border-primary bg-background p-4">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-bold uppercase text-secondary">New WOD</h3>
@@ -172,7 +168,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleApplyChanges("wod", workoutContent.wod!)}
+                onClick={() => handleApplyChanges("wod", workoutContent.wod)}
               >
                 Apply Changes
               </Button>
@@ -182,7 +178,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         </div>
       )}
 
-      {workoutContent.notes && (
+      {workoutContent.notes !== null && (
         <div className="rounded border-2 border-primary bg-background p-4">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-bold uppercase text-secondary">New Notes</h3>
@@ -190,7 +186,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleApplyChanges("notes", workoutContent.notes!)}
+                onClick={() => handleApplyChanges("notes", workoutContent.notes)}
               >
                 Apply Changes
               </Button>
