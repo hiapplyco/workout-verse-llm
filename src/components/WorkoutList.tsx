@@ -9,14 +9,15 @@ interface WorkoutListProps {
 
 export const WorkoutList = ({ workouts, onWorkoutChange, onWorkoutSpeak }: WorkoutListProps) => {
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-auto">
       {workouts.map((workout, index) => (
-        <WorkoutCard
-          key={workout.id}
-          workout={workout}
-          onChange={(key, value) => onWorkoutChange(index, key, value)}
-          onSpeak={() => onWorkoutSpeak(workout)}
-        />
+        <div key={workout.id} className="h-fit">
+          <WorkoutCard
+            workout={workout}
+            onChange={(key, value) => onWorkoutChange(index, key, value)}
+            onSpeak={() => onWorkoutSpeak(workout)}
+          />
+        </div>
       ))}
     </div>
   );
