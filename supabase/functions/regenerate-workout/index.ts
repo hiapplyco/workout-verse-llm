@@ -14,37 +14,38 @@ serve(async (req) => {
 
   try {
     const { warmUp, wod, notes, userPrompt, day } = await req.json();
-    console.log('Received request with data:', { warmUp, wod, notes, userPrompt, day });
+    console.log('Received request to regenerate workout:', { day, userPrompt });
 
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const prompt = `
-      You are an expert CrossFit coach planning a workout for ${day}. 
+      You are an expert CrossFit coach creating a workout for ${day}.
       
-      Current workout plan:
+      Current workout:
       Warm-up: ${warmUp}
-      WOD: ${wod}
+      WOD (Workout of the Day): ${wod}
       Notes: ${notes}
       
       User request: ${userPrompt}
       
-      Create a new CrossFit workout plan that:
-      1. Follows proper exercise progression
-      2. Includes a targeted warm-up for the specific WOD movements
-      3. Provides clear coaching cues in the notes
+      Create a completely new CrossFit workout that:
+      1. Has a different warm-up targeting the main movements
+      2. Changes the WOD based on the user's request
+      3. Provides specific coaching notes
       
-      Consider:
-      - Movement patterns and muscle groups
-      - Exercise intensity and volume
-      - Rest periods and pacing
-      - Proper scaling options
+      Important rules:
+      - DO NOT keep any exercises from the original workout
+      - Create entirely new exercises for both warm-up and WOD
+      - Ensure the warm-up properly prepares for the WOD
+      - Include specific rep schemes and weights
+      - Make the workout challenging but scalable
       
-      Return only a JSON object with this format:
+      Return ONLY a JSON object with this exact format:
       {
-        "warmUp": "detailed warm-up plan",
-        "wod": "workout of the day",
-        "notes": "coaching cues and tips"
+        "warmUp": "detailed warm-up plan with new exercises",
+        "wod": "new workout of the day",
+        "notes": "specific coaching notes"
       }
     `;
 
@@ -63,15 +64,21 @@ serve(async (req) => {
     let modifiedWorkout;
     try {
       modifiedWorkout = JSON.parse(jsonMatch[0]);
-      console.log('Successfully parsed JSON:', modifiedWorkout);
-    } catch (error) {
-      console.error('JSON parse error:', error);
-      throw new Error('Invalid JSON format in AI response');
-    }
+      console.log('Successfully parsed workout:', modifiedWorkout);
 
-    if (!modifiedWorkout.warmUp || !modifiedWorkout.wod || !modifiedWorkout.notes) {
-      console.error('Missing required fields in response:', modifiedWorkout);
-      throw new Error('Incomplete workout data received from AI');
+      // Validate the response has all required fields and they're not empty
+      if (!modifiedWorkout.warmUp?.trim() || !modifiedWorkout.wod?.trim() || !modifiedWorkout.notes?.trim()) {
+        throw new Error('Incomplete workout data received from AI');
+      }
+
+      // Validate the response isn't just repeating the original workout
+      if (modifiedWorkout.warmUp === warmUp || modifiedWorkout.wod === wod) {
+        throw new Error('AI generated the same workout as before');
+      }
+
+    } catch (error) {
+      console.error('Validation error:', error);
+      throw new Error('Invalid workout data received from AI');
     }
 
     return new Response(JSON.stringify(modifiedWorkout), {
