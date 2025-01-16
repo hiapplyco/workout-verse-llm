@@ -24,10 +24,16 @@ const Index = () => {
       }
 
       // Fetch existing workouts for the user
-      const { data: existingWorkouts } = await supabase
+      const { data: existingWorkouts, error: fetchError } = await supabase
         .from('workouts')
-        .select('id, day, warm_up, wod, notes')
+        .select('id, day, warmup, wod, notes')
         .eq('user_id', user.id);
+
+      if (fetchError) {
+        console.error('Error fetching workouts:', fetchError);
+        toast.error('Failed to fetch workouts');
+        return;
+      }
 
       // If no workouts exist for the user, insert the initial workouts
       if (!existingWorkouts?.length) {

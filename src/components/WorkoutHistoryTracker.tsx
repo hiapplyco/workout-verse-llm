@@ -19,7 +19,7 @@ export const saveWorkoutHistory = async ({
     
     if (user) {
       console.log('Saving workout history for user:', user.id);
-      console.log('Workout ID:', workoutId); // Add this log
+      console.log('Workout ID:', workoutId);
       
       // Validate UUID format
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -35,8 +35,8 @@ export const saveWorkoutHistory = async ({
           workout_id: workoutId,
           user_id: user.id,
           prompt: userPrompt,
-          previous_wod: previousWod,
-          new_wod: newWod
+          previouswod: previousWod,
+          newwod: newWod
         });
 
       if (historyError) {
