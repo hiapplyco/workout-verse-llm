@@ -36,7 +36,7 @@ const Index = () => {
 
       const { data: existingWorkouts, error: fetchError } = await supabase
         .from('workouts')
-        .select('id, day, warmup, wod, notes')
+        .select('*')
         .eq('user_id', session.user.id)
         .in('day', WEEKDAYS)
         .order('created_at', { ascending: false })
@@ -51,14 +51,17 @@ const Index = () => {
       if (!existingWorkouts?.length) {
         console.log('No existing workouts found, inserting initial workouts');
         const workoutsToInsert = initialWorkouts.map(workout => ({
-          ...workout,
           day: WEEKDAYS[WEEKDAYS.indexOf(workout.day)],
-          user_id: session.user.id,
+          warmup: workout.warmup,
+          wod: workout.wod,
+          notes: workout.notes,
+          user_id: session.user.id
         }));
 
-        const { error: insertError } = await supabase
+        const { data: insertedWorkouts, error: insertError } = await supabase
           .from('workouts')
-          .insert(workoutsToInsert);
+          .insert(workoutsToInsert)
+          .select();
 
         if (insertError) {
           console.error('Error inserting initial workouts:', insertError);
@@ -66,7 +69,7 @@ const Index = () => {
           return;
         }
 
-        setWorkouts(sortWorkouts(initialWorkouts));
+        setWorkouts(sortWorkouts(insertedWorkouts));
         toast.success('Initial workouts created successfully!');
       } else {
         console.log('Existing workouts found:', existingWorkouts);
