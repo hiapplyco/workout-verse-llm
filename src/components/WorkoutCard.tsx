@@ -33,7 +33,6 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
   const handleSpeak = async () => {
     setIsGeneratingVoice(true);
     try {
-      // Format text without template literals to minimize whitespace
       const speechText = `Today is ${workout.day}. For warm up: ${workout.warmUp}. Workout of the day: ${workout.wod}. ${workout.notes ? `Important notes: ${workout.notes}.` : ''}`;
 
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
@@ -88,43 +87,44 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
             className="min-h-[60px] resize-y border-2 border-accent bg-card font-medium text-white"
           />
         </div>
-        <div className="space-y-4">
+
+        <div className="grid grid-cols-2 gap-4">
           <Button 
-            onClick={() => setShowPrompt(!showPrompt)} 
-            className="w-full border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white"
+            onClick={handleSpeak}
+            disabled={isGeneratingVoice}
+            className="border-2 border-accent bg-card font-bold uppercase tracking-tight text-accent transition-colors hover:bg-accent hover:text-white disabled:opacity-50"
           >
-            <MessageSquarePlus className="mr-2 h-4 w-4" />
-            Do you want to change it up?
+            <Volume2 className="mr-2 h-4 w-4" />
+            {isGeneratingVoice ? "Generating..." : "Speak Workout"}
           </Button>
 
-          {showPrompt && (
-            <div className="space-y-2">
-              <Input
-                placeholder="Describe how you'd like to modify this workout..."
-                value={userPrompt}
-                onChange={(e) => setUserPrompt(e.target.value)}
-                className="border-2 border-accent bg-card font-medium text-white"
-              />
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleRegenerate} 
-                  className="flex-1 border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white"
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Regenerate
-                </Button>
-                <Button 
-                  onClick={handleSpeak}
-                  disabled={isGeneratingVoice}
-                  className="flex-1 border-2 border-accent bg-card font-bold uppercase tracking-tight text-accent transition-colors hover:bg-accent hover:text-white disabled:opacity-50"
-                >
-                  <Volume2 className="mr-2 h-4 w-4" />
-                  {isGeneratingVoice ? "Generating..." : "Speak"}
-                </Button>
-              </div>
-            </div>
-          )}
+          <Button 
+            onClick={handleRegenerate}
+            className="border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Regenerate
+          </Button>
         </div>
+
+        <Button 
+          onClick={() => setShowPrompt(!showPrompt)} 
+          className="w-full border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white"
+        >
+          <MessageSquarePlus className="mr-2 h-4 w-4" />
+          Do you want to change it up?
+        </Button>
+
+        {showPrompt && (
+          <div className="space-y-2">
+            <Input
+              placeholder="Describe how you'd like to modify this workout..."
+              value={userPrompt}
+              onChange={(e) => setUserPrompt(e.target.value)}
+              className="border-2 border-accent bg-card font-medium text-white"
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );
