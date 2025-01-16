@@ -98,16 +98,23 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       onChange("notes", data.notes);
       
       try {
+        // Get the current user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          throw new Error('No authenticated user found');
+        }
+
         // Save workout history
-        const { data: historyData, error: historyError } = await supabase
+        const { error: historyError } = await supabase
           .from('workout_history')
           .insert({
             workout_id: workout.id,
-            user_prompt: userPrompt,
+            user_id: user.id,
+            prompt: userPrompt,
             previous_wod: originalWorkout.wod,
             new_wod: data.wod,
-          })
-          .select();
+          });
 
         if (historyError) {
           console.error('Error saving workout history:', historyError);
