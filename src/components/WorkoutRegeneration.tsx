@@ -19,11 +19,11 @@ interface WorkoutRegenerationProps {
 
 export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationProps) => {
   const [userPrompt, setUserPrompt] = useState("");
-  const [optimisticData, setOptimisticData] = useState<null | {
+  const [workoutContent, setWorkoutContent] = useState<{
     warmup: string;
     wod: string;
     notes: string;
-  }>(null);
+  } | null>(null);
 
   const regenerateWorkoutMutation = useMutation({
     mutationFn: async (prompt: string) => {
@@ -57,15 +57,12 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
         if (historyError) throw historyError;
 
-        // Set optimistic data (empty fields while loading)
-        setOptimisticData({
-          warmup: originalWorkout.warmup,
-          wod: originalWorkout.wod,
-          notes: originalWorkout.notes
-        });
+        // Set loading state by keeping original content
+        setWorkoutContent(originalWorkout);
 
         // Get regenerated workout from service
         const data = await workoutService.regenerateWorkout(originalWorkout, prompt, workout.day);
+        console.log('Received regenerated workout:', data);
 
         // Update workout history with new WOD
         const { error: updateHistoryError } = await supabase
@@ -80,14 +77,14 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
         return data;
       } catch (error) {
-        // Reset optimistic data on error
-        setOptimisticData(null);
+        // Reset workout content on error
+        setWorkoutContent(null);
         throw error;
       }
     },
     onSuccess: (data) => {
-      // Clear optimistic data
-      setOptimisticData(null);
+      // Clear workout content state
+      setWorkoutContent(null);
       
       // Update all workout fields with new data
       Object.entries(data).forEach(([key, value]) => {
@@ -118,8 +115,8 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
     debouncedRegenerate(userPrompt);
   };
 
-  // Use optimistic data if available, otherwise use actual workout data
-  const displayData = optimisticData || workout;
+  // Use workout content if available, otherwise use actual workout data
+  const displayData = workoutContent || workout;
 
   return (
     <WorkoutRegenerationForm
