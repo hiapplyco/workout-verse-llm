@@ -30,6 +30,11 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       console.log('Starting workout regeneration for:', workout.day);
       console.log('User prompt:', prompt);
 
+      // Clear the existing workout fields immediately
+      onChange("warmUp", "");
+      onChange("wod", "");
+      onChange("notes", "");
+
       const requestBody = {
         warmUp: workout.warmUp,
         wod: workout.wod,
@@ -75,7 +80,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       return data;
     },
     onSuccess: async (data) => {
-      // Update workout fields
+      // Update workout fields with new data
       onChange("warmUp", data.warmUp);
       onChange("wod", data.wod);
       onChange("notes", data.notes);
@@ -96,6 +101,11 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       toast.success(`${workout.day}'s workout updated successfully!`);
     },
     onError: (error) => {
+      // Restore the original workout data if there's an error
+      onChange("warmUp", workout.warmUp);
+      onChange("wod", workout.wod);
+      onChange("notes", workout.notes);
+      
       console.error('Error regenerating workout:', error);
       toast.error(`Failed to update ${workout.day}'s workout. Please try again.`);
     }
