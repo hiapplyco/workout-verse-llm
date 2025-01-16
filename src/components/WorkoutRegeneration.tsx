@@ -59,7 +59,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
         // Clear fields before regeneration
         Object.keys(originalWorkout).forEach(key => 
-          onChange(key.toLowerCase(), "")
+          onChange(key, "")
         );
 
         // Get regenerated workout from Gemini
@@ -101,7 +101,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       } catch (error) {
         // Restore original values on error
         Object.entries(originalWorkout).forEach(([key, value]) => 
-          onChange(key.toLowerCase(), value)
+          onChange(key, value)
         );
         throw error;
       }
@@ -109,7 +109,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
     onSuccess: (data) => {
       // Update all workout fields with new data
       Object.entries(data).forEach(([key, value]) => 
-        onChange(key.toLowerCase(), value)
+        onChange(key, value)
       );
       
       setUserPrompt("");

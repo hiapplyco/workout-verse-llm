@@ -25,13 +25,13 @@ serve(async (req) => {
       The user wants to: ${userPrompt}
       
       Current workout structure:
-      Warm-up: ${currentWorkout.warmUp}
+      Warm-up: ${currentWorkout.warm_up}
       WOD: ${currentWorkout.wod}
       Notes: ${currentWorkout.notes}
       
       Respond with a valid JSON object containing exactly these three fields:
       {
-        "warmUp": "detailed warm-up plan",
+        "warm_up": "detailed warm-up plan",
         "wod": "workout of the day",
         "notes": "specific coaching notes"
       }
@@ -54,8 +54,8 @@ serve(async (req) => {
     console.log('Successfully parsed response:', modifiedWorkout);
 
     // Validate response structure
-    const { warmUp, wod, notes } = modifiedWorkout;
-    if (!warmUp?.trim() || !wod?.trim() || !notes?.trim()) {
+    const { warm_up, wod, notes } = modifiedWorkout;
+    if (!warm_up?.trim() || !wod?.trim() || !notes?.trim()) {
       throw new Error('Invalid or empty workout fields received');
     }
 
