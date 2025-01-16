@@ -59,7 +59,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         throw new Error('Invalid workout data structure received');
       }
 
-      // Update all fields
+      // Update all fields with Gemini's response
       onChange("warmUp", warmUp);
       onChange("wod", wod);
       onChange("notes", notes);
