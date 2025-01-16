@@ -17,8 +17,8 @@ interface WorkoutCardProps {
 
 const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardProps) => {
   return (
-    <Card className="w-full animate-fade-in border-2 border-primary bg-card">
-      <CardHeader className="border-b-2 border-primary">
+    <Card className="relative w-full animate-fade-in border-2 border-primary bg-background">
+      <CardHeader className="relative border-b-2 border-primary bg-card">
         <CardTitle className="text-xl font-black uppercase tracking-tight text-primary">
           {workout.day}
         </CardTitle>
@@ -29,7 +29,7 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
           <Textarea
             value={workout.warmUp}
             onChange={(e) => onChange("warmUp", e.target.value)}
-            className="min-h-[80px] resize-y border-2 border-accent bg-muted font-medium text-white"
+            className="min-h-[80px] resize-y border-2 border-accent bg-card font-medium text-white"
           />
         </div>
 
@@ -38,7 +38,7 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
           <Textarea
             value={workout.wod}
             onChange={(e) => onChange("wod", e.target.value)}
-            className="min-h-[100px] resize-y border-2 border-accent bg-muted font-medium text-white"
+            className="min-h-[100px] resize-y border-2 border-accent bg-card font-medium text-white"
           />
         </div>
 
@@ -47,21 +47,21 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
           <Textarea
             value={workout.notes}
             onChange={(e) => onChange("notes", e.target.value)}
-            className="min-h-[60px] resize-y border-2 border-accent bg-muted font-medium text-white"
+            className="min-h-[60px] resize-y border-2 border-accent bg-card font-medium text-white"
           />
         </div>
 
         <div className="flex gap-2">
           <Button 
             onClick={onRegenerate} 
-            className="flex-1 border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-card"
+            className="flex-1 border-2 border-primary bg-background font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-background"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
             Regenerate
           </Button>
           <Button 
             onClick={onSpeak} 
-            className="flex-1 border-2 border-accent bg-card font-bold uppercase tracking-tight text-accent transition-colors hover:bg-accent hover:text-card"
+            className="flex-1 border-2 border-accent bg-background font-bold uppercase tracking-tight text-accent transition-colors hover:bg-accent hover:text-background"
           >
             <Volume2 className="mr-2 h-4 w-4" />
             Speak
