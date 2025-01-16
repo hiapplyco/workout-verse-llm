@@ -51,38 +51,39 @@ serve(async (req) => {
     let modifiedWorkout;
     
     try {
-      // First try to parse the entire response
       modifiedWorkout = JSON.parse(cleanedText);
-      console.log('Successfully parsed complete response');
+      console.log('Successfully parsed complete response:', modifiedWorkout);
     } catch (e) {
       console.log('Failed to parse complete response, attempting to extract JSON');
-      // If that fails, try to extract JSON
       const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         console.error('No JSON object found in response');
         throw new Error('Failed to parse Gemini response as JSON');
       }
       modifiedWorkout = JSON.parse(jsonMatch[0]);
-      console.log('Successfully parsed extracted JSON');
+      console.log('Successfully parsed extracted JSON:', modifiedWorkout);
     }
 
-    // Validate the workout data
-    if (!modifiedWorkout) {
-      throw new Error('No workout data received from Gemini');
+    // Enhanced validation
+    if (!modifiedWorkout || typeof modifiedWorkout !== 'object') {
+      console.error('Invalid response structure:', modifiedWorkout);
+      throw new Error('Invalid response structure from Gemini');
     }
 
     const { warmUp: newWarmUp, wod: newWod, notes: newNotes } = modifiedWorkout;
 
-    if (typeof newWarmUp !== 'string' || typeof newWod !== 'string' || typeof newNotes !== 'string') {
-      console.error('Invalid data types in response:', modifiedWorkout);
-      throw new Error('Invalid workout data structure: fields must be strings');
-    }
-
+    // Strict type checking and conversion
     const validatedWorkout = {
-      warmUp: newWarmUp,
-      wod: newWod,
-      notes: newNotes
+      warmUp: String(newWarmUp || ''),
+      wod: String(newWod || ''),
+      notes: String(newNotes || '')
     };
+
+    // Final validation
+    if (!validatedWorkout.warmUp || !validatedWorkout.wod || !validatedWorkout.notes) {
+      console.error('Missing required fields in response:', validatedWorkout);
+      throw new Error('Missing required fields in Gemini response');
+    }
 
     console.log('Sending validated workout to frontend:', validatedWorkout);
     
