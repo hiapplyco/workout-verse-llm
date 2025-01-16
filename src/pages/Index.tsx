@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { initialWorkouts } from "@/data/initialWorkouts";
 import { Navigation } from "@/components/Navigation";
 import { WeeklyPromptForm } from "@/components/WeeklyPromptForm";
 import { WorkoutList } from "@/components/WorkoutList";
@@ -49,28 +48,8 @@ const Index = () => {
       }
 
       if (!existingWorkouts?.length) {
-        console.log('No existing workouts found, inserting initial workouts');
-        const workoutsToInsert = initialWorkouts.map(workout => ({
-          day: WEEKDAYS[WEEKDAYS.indexOf(workout.day)],
-          warmup: workout.warmup,
-          wod: workout.wod,
-          notes: workout.notes,
-          user_id: session.user.id
-        }));
-
-        const { data: insertedWorkouts, error: insertError } = await supabase
-          .from('workouts')
-          .insert(workoutsToInsert)
-          .select();
-
-        if (insertError) {
-          console.error('Error inserting initial workouts:', insertError);
-          toast.error('Failed to initialize workouts');
-          return;
-        }
-
-        setWorkouts(sortWorkouts(insertedWorkouts));
-        toast.success('Initial workouts created successfully!');
+        console.log('No existing workouts found');
+        toast.info('Welcome! Generate your weekly workout plan using the form above.');
       } else {
         console.log('Existing workouts found:', existingWorkouts);
         setWorkouts(sortWorkouts(existingWorkouts));
@@ -184,11 +163,19 @@ const Index = () => {
           onPromptChange={setWeeklyPrompt}
           onGenerate={generateWeeklyWorkouts}
         />
-        <WorkoutList
-          workouts={workouts}
-          onWorkoutChange={handleChange}
-          onWorkoutSpeak={handleSpeakPlan}
-        />
+        {workouts.length === 0 ? (
+          <div className="text-center py-12">
+            <h3 className="text-xl font-medium text-gray-600">
+              Welcome to your workout planner! Get started by generating your weekly workout plan using the form above.
+            </h3>
+          </div>
+        ) : (
+          <WorkoutList
+            workouts={workouts}
+            onWorkoutChange={handleChange}
+            onWorkoutSpeak={handleSpeakPlan}
+          />
+        )}
         <audio ref={audioRef} hidden />
       </main>
     </div>
