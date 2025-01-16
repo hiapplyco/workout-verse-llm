@@ -5,6 +5,8 @@ import { WorkoutRegenerationForm } from "./WorkoutRegenerationForm";
 import { useMutation } from "@tanstack/react-query";
 import { workoutAgents } from "@/services/workoutAgents";
 import { useDebounce } from "@/hooks/useDebounce";
+import { Button } from "./ui/button";
+import { Loader2 } from "lucide-react";
 
 interface WorkoutRegenerationProps {
   workout: {
@@ -20,10 +22,14 @@ interface WorkoutRegenerationProps {
 export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationProps) => {
   const [userPrompt, setUserPrompt] = useState("");
   const [workoutContent, setWorkoutContent] = useState<{
-    warmup: string;
-    wod: string;
-    notes: string;
-  } | null>(null);
+    warmup: string | null;
+    wod: string | null;
+    notes: string | null;
+  }>({
+    warmup: null,
+    wod: null,
+    notes: null
+  });
 
   const regenerateWorkoutMutation = useMutation({
     mutationFn: async (prompt: string) => {
@@ -57,9 +63,6 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
         if (historyError) throw historyError;
 
-        // Set loading state by keeping original content
-        setWorkoutContent(originalWorkout);
-
         // Generate new content using all three agents concurrently
         const [warmupResponse, wodResponse, notesResponse] = await Promise.all([
           workoutAgents.generateWarmup(originalWorkout, prompt, workout.day),
@@ -88,24 +91,21 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
         return newWorkout;
       } catch (error) {
-        // Reset workout content on error
-        setWorkoutContent(null);
+        setWorkoutContent({
+          warmup: null,
+          wod: null,
+          notes: null
+        });
         throw error;
       }
     },
     onSuccess: (data) => {
-      console.log('Updating workout fields with:', data);
-      
-      // Update all workout fields with new data
-      onChange("warmup", data.warmup);
-      onChange("wod", data.wod);
-      onChange("notes", data.notes);
-      
-      // Clear workout content state
-      setWorkoutContent(null);
-      setUserPrompt("");
-      
-      toast.success(`${workout.day}'s workout updated successfully!`);
+      console.log('Setting workout content with:', data);
+      setWorkoutContent({
+        warmup: data.warmup,
+        wod: data.wod,
+        notes: data.notes
+      });
     },
     onError: (error: Error) => {
       console.error('Error regenerating workout:', error);
@@ -126,13 +126,86 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
     debouncedRegenerate(userPrompt);
   };
 
+  const handleApplyChanges = (key: string, value: string) => {
+    onChange(key, value);
+    setWorkoutContent(prev => ({
+      ...prev,
+      [key]: null
+    }));
+    toast.success(`${key.charAt(0).toUpperCase() + key.slice(1)} updated successfully!`);
+  };
+
   return (
-    <WorkoutRegenerationForm
-      day={workout.day}
-      userPrompt={userPrompt}
-      isRegenerating={regenerateWorkoutMutation.isPending}
-      onPromptChange={setUserPrompt}
-      onRegenerate={handleRegenerate}
-    />
+    <div className="space-y-4">
+      <WorkoutRegenerationForm
+        day={workout.day}
+        userPrompt={userPrompt}
+        isRegenerating={regenerateWorkoutMutation.isPending}
+        onPromptChange={setUserPrompt}
+        onRegenerate={handleRegenerate}
+      />
+
+      {/* Preview sections */}
+      {workoutContent.warmup && (
+        <div className="rounded border-2 border-primary bg-background p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-bold uppercase text-secondary">New Warmup</h3>
+            <div className="space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleApplyChanges("warmup", workoutContent.warmup!)}
+              >
+                Apply Changes
+              </Button>
+            </div>
+          </div>
+          <p className="whitespace-pre-wrap font-medium">{workoutContent.warmup}</p>
+        </div>
+      )}
+
+      {workoutContent.wod && (
+        <div className="rounded border-2 border-primary bg-background p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-bold uppercase text-secondary">New WOD</h3>
+            <div className="space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleApplyChanges("wod", workoutContent.wod!)}
+              >
+                Apply Changes
+              </Button>
+            </div>
+          </div>
+          <p className="whitespace-pre-wrap font-medium">{workoutContent.wod}</p>
+        </div>
+      )}
+
+      {workoutContent.notes && (
+        <div className="rounded border-2 border-primary bg-background p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-bold uppercase text-secondary">New Notes</h3>
+            <div className="space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleApplyChanges("notes", workoutContent.notes!)}
+              >
+                Apply Changes
+              </Button>
+            </div>
+          </div>
+          <p className="whitespace-pre-wrap font-medium">{workoutContent.notes}</p>
+        </div>
+      )}
+
+      {regenerateWorkoutMutation.isPending && (
+        <div className="flex items-center justify-center space-x-2 py-4">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Generating new workout content...</span>
+        </div>
+      )}
+    </div>
   );
 };
