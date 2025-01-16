@@ -30,84 +30,98 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       console.log('Starting workout regeneration for:', workout.day);
       console.log('User prompt:', prompt);
 
-      // Clear the fields immediately using setTimeout to ensure it happens in a separate tick
-      setTimeout(() => {
-        onChange("warmUp", "");
-        onChange("wod", "");
-        onChange("notes", "");
-      }, 0);
-
-      const requestBody = {
+      // Store the original values
+      const originalWorkout = {
         warmUp: workout.warmUp,
         wod: workout.wod,
-        notes: workout.notes,
-        userPrompt: prompt,
-        day: workout.day
+        notes: workout.notes
       };
-      console.log('Sending request to regenerate-workout:', requestBody);
 
-      const { data, error } = await supabase.functions.invoke<RegenerateWorkoutResponse>('regenerate-workout', {
-        body: requestBody
-      });
+      // Clear the fields immediately
+      onChange("warmUp", "");
+      onChange("wod", "");
+      onChange("notes", "");
 
-      console.log('Raw response from regenerate-workout:', data);
+      try {
+        const { data, error } = await supabase.functions.invoke<RegenerateWorkoutResponse>('regenerate-workout', {
+          body: {
+            warmUp: originalWorkout.warmUp,
+            wod: originalWorkout.wod,
+            notes: originalWorkout.notes,
+            userPrompt: prompt,
+            day: workout.day
+          }
+        });
 
-      if (error) {
-        console.error('Error from regenerate-workout:', error);
+        console.log('Raw response from regenerate-workout:', data);
+
+        if (error) {
+          console.error('Error from regenerate-workout:', error);
+          throw error;
+        }
+
+        if (!data) {
+          console.error('No data received from regenerate-workout');
+          throw new Error('No data received from regenerate-workout');
+        }
+
+        // Type guard to ensure response structure
+        const isValidWorkoutResponse = (response: any): response is RegenerateWorkoutResponse => {
+          return (
+            typeof response === 'object' &&
+            response !== null &&
+            typeof response.warmUp === 'string' &&
+            typeof response.wod === 'string' &&
+            typeof response.notes === 'string'
+          );
+        };
+
+        if (!isValidWorkoutResponse(data)) {
+          console.error('Invalid response structure:', data);
+          throw new Error('Invalid workout data structure received');
+        }
+
+        console.log('Updating workout with validated data:', data);
+        return { data, originalWorkout };
+      } catch (error) {
+        // Restore original values on error
+        onChange("warmUp", originalWorkout.warmUp);
+        onChange("wod", originalWorkout.wod);
+        onChange("notes", originalWorkout.notes);
         throw error;
       }
-
-      if (!data) {
-        console.error('No data received from regenerate-workout');
-        throw new Error('No data received from regenerate-workout');
-      }
-
-      // Type guard to ensure response structure
-      const isValidWorkoutResponse = (response: any): response is RegenerateWorkoutResponse => {
-        return (
-          typeof response === 'object' &&
-          response !== null &&
-          typeof response.warmUp === 'string' &&
-          typeof response.wod === 'string' &&
-          typeof response.notes === 'string'
-        );
-      };
-
-      if (!isValidWorkoutResponse(data)) {
-        console.error('Invalid response structure:', data);
-        throw new Error('Invalid workout data structure received');
-      }
-
-      console.log('Updating workout with validated data:', data);
-      return data;
     },
-    onSuccess: async (data) => {
+    onSuccess: async ({ data, originalWorkout }) => {
       // Update workout fields with new data
       onChange("warmUp", data.warmUp);
       onChange("wod", data.wod);
       onChange("notes", data.notes);
       
-      // Save workout history
-      const historyResult = await saveWorkoutHistory({
-        workoutId: workout.id,
-        userPrompt,
-        previousWod: workout.wod,
-        newWod: data.wod,
-      });
+      try {
+        // Save workout history
+        const { data: historyData, error: historyError } = await supabase
+          .from('workout_history')
+          .insert({
+            workout_id: workout.id,
+            user_prompt: userPrompt,
+            previous_wod: originalWorkout.wod,
+            new_wod: data.wod,
+          })
+          .select();
 
-      if (!historyResult) {
-        console.warn('Failed to save workout history');
+        if (historyError) {
+          console.error('Error saving workout history:', historyError);
+          throw historyError;
+        }
+
+        setUserPrompt("");
+        toast.success(`${workout.day}'s workout updated successfully!`);
+      } catch (error) {
+        console.error('Error saving workout history:', error);
+        toast.error('Failed to save workout history');
       }
-
-      setUserPrompt("");
-      toast.success(`${workout.day}'s workout updated successfully!`);
     },
     onError: (error) => {
-      // Restore the original workout data if there's an error
-      onChange("warmUp", workout.warmUp);
-      onChange("wod", workout.wod);
-      onChange("notes", workout.notes);
-      
       console.error('Error regenerating workout:', error);
       toast.error(`Failed to update ${workout.day}'s workout. Please try again.`);
     }
