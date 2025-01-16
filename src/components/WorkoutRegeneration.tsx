@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 interface WorkoutRegenerationProps {
   workout: {
+    id: string;
     day: string;
     warmUp: string;
     wod: string;
@@ -40,10 +41,25 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       if (error) throw error;
 
       if (data && typeof data === 'object') {
-        onChange("warmUp", data.warmUp);
-        onChange("wod", data.wod);
-        onChange("notes", data.notes);
+        // Update each field individually to ensure state changes are triggered
+        if (data.warmUp) onChange("warmUp", data.warmUp);
+        if (data.wod) onChange("wod", data.wod);
+        if (data.notes) onChange("notes", data.notes);
         
+        // Store the workout update in workout_history
+        const { error: historyError } = await supabase
+          .from('workout_history')
+          .insert({
+            workout_id: workout.id,
+            prompt: userPrompt,
+            previous_wod: workout.wod,
+            new_wod: data.wod
+          });
+
+        if (historyError) {
+          console.error('Error saving workout history:', historyError);
+        }
+
         setUserPrompt("");
         toast.success(`${workout.day}'s workout updated successfully!`);
       } else {
