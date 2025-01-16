@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { WorkoutRegenerationForm } from "./WorkoutRegenerationForm";
 import { useMutation } from "@tanstack/react-query";
+import { workoutService } from "@/services/workoutService";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface WorkoutRegenerationProps {
   workout: {
@@ -15,14 +17,13 @@ interface WorkoutRegenerationProps {
   onChange: (key: string, value: string) => void;
 }
 
-interface RegenerateWorkoutResponse {
-  warm_up: string;
-  wod: string;
-  notes: string;
-}
-
 export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationProps) => {
   const [userPrompt, setUserPrompt] = useState("");
+  const [optimisticData, setOptimisticData] = useState<null | {
+    warm_up: string;
+    wod: string;
+    notes: string;
+  }>(null);
 
   const regenerateWorkoutMutation = useMutation({
     mutationFn: async (prompt: string) => {
@@ -36,7 +37,6 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       console.log('Starting workout regeneration for:', workout.day);
       console.log('User prompt:', prompt);
 
-      // Store original workout state
       const originalWorkout = {
         warm_up: workout.warm_up,
         wod: workout.wod,
@@ -57,34 +57,15 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
         if (historyError) throw historyError;
 
-        // Clear fields before regeneration
-        Object.keys(originalWorkout).forEach(key => 
-          onChange(key, "")
-        );
-
-        // Get regenerated workout from Gemini
-        const { data, error } = await supabase.functions.invoke<RegenerateWorkoutResponse>('regenerate-workout', {
-          body: {
-            currentWorkout: originalWorkout,
-            userPrompt: prompt,
-            day: workout.day
-          }
+        // Set optimistic data (empty fields while loading)
+        setOptimisticData({
+          warm_up: "",
+          wod: "",
+          notes: ""
         });
 
-        if (error) throw error;
-        if (!data) throw new Error('No data received from regenerate-workout');
-
-        // Validate response structure
-        const isValidWorkoutResponse = (response: any): response is RegenerateWorkoutResponse => {
-          return response && 
-                 typeof response.warm_up === 'string' && 
-                 typeof response.wod === 'string' && 
-                 typeof response.notes === 'string';
-        };
-
-        if (!isValidWorkoutResponse(data)) {
-          throw new Error('Invalid workout data structure received');
-        }
+        // Get regenerated workout from service
+        const data = await workoutService.regenerateWorkout(originalWorkout, prompt, workout.day);
 
         // Update workout history with new WOD
         const { error: updateHistoryError } = await supabase
@@ -99,18 +80,21 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
         return data;
       } catch (error) {
-        // Restore original values on error
-        Object.entries(originalWorkout).forEach(([key, value]) => 
-          onChange(key, value)
-        );
+        // Reset optimistic data on error
+        setOptimisticData(null);
         throw error;
       }
     },
     onSuccess: (data) => {
+      // Clear optimistic data
+      setOptimisticData(null);
+      
       // Update all workout fields with new data
-      Object.entries(data).forEach(([key, value]) => 
-        onChange(key, value)
-      );
+      Object.entries(data).forEach(([key, value]) => {
+        if (key === "warm_up" || key === "wod" || key === "notes") {
+          onChange(key, value);
+        }
+      });
       
       setUserPrompt("");
       toast.success(`${workout.day}'s workout updated successfully!`);
@@ -121,14 +105,21 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
     }
   });
 
+  const debouncedRegenerate = useDebounce((prompt: string) => {
+    regenerateWorkoutMutation.mutate(prompt);
+  }, 500);
+
   const handleRegenerate = async () => {
     if (!userPrompt.trim()) {
       toast.error("Please enter how you'd like to modify the workout");
       return;
     }
 
-    regenerateWorkoutMutation.mutate(userPrompt);
+    debouncedRegenerate(userPrompt);
   };
+
+  // Use optimistic data if available, otherwise use actual workout data
+  const displayData = optimisticData || workout;
 
   return (
     <WorkoutRegenerationForm
