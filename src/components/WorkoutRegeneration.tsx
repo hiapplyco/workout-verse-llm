@@ -48,49 +48,48 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         throw error;
       }
 
-      if (data && typeof data === 'object') {
-        console.log('Updating workout with new data:', data);
-        
-        // Ensure we have all required fields before updating
-        const { warmUp, wod, notes } = data;
-        
-        if (!warmUp || !wod || !notes) {
-          throw new Error('Missing required workout data from response');
-        }
-
-        // Update all fields immediately
-        onChange("warmUp", warmUp);
-        onChange("wod", wod);
-        onChange("notes", notes);
-        
-        // Store the workout update in workout_history
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user) {
-          console.log('Saving workout history for user:', user.id);
-          const { error: historyError } = await supabase
-            .from('workout_history')
-            .insert({
-              workout_id: workout.id,
-              user_id: user.id,
-              prompt: userPrompt,
-              previous_wod: workout.wod,
-              new_wod: wod
-            });
-
-          if (historyError) {
-            console.error('Error saving workout history:', historyError);
-          } else {
-            console.log('Successfully saved workout history');
-          }
-        }
-
-        setUserPrompt("");
-        toast.success(`${workout.day}'s workout updated successfully!`);
-      } else {
-        console.error('Invalid response format from regenerate-workout:', data);
-        throw new Error('Invalid response format from regenerate-workout');
+      if (!data) {
+        throw new Error('No data received from regenerate-workout');
       }
+
+      // Validate the response structure
+      const { warmUp, wod, notes } = data;
+      
+      if (typeof warmUp !== 'string' || typeof wod !== 'string' || typeof notes !== 'string') {
+        console.error('Invalid data structure received:', data);
+        throw new Error('Invalid workout data structure received');
+      }
+
+      // Update all fields
+      onChange("warmUp", warmUp);
+      onChange("wod", wod);
+      onChange("notes", notes);
+      
+      // Store the workout update in workout_history
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        console.log('Saving workout history for user:', user.id);
+        const { error: historyError } = await supabase
+          .from('workout_history')
+          .insert({
+            workout_id: workout.id,
+            user_id: user.id,
+            prompt: userPrompt,
+            previous_wod: workout.wod,
+            new_wod: wod
+          });
+
+        if (historyError) {
+          console.error('Error saving workout history:', historyError);
+          toast.error('Failed to save workout history');
+        } else {
+          console.log('Successfully saved workout history');
+        }
+      }
+
+      setUserPrompt("");
+      toast.success(`${workout.day}'s workout updated successfully!`);
     } catch (error) {
       console.error('Error regenerating workout:', error);
       toast.error(`Failed to update ${workout.day}'s workout. Please try again.`);
