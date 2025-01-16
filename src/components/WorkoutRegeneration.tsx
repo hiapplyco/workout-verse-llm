@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RefreshCw } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -19,26 +19,10 @@ interface WorkoutRegenerationProps {
 export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationProps) => {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [userPrompt, setUserPrompt] = useState("");
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const getUserId = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-      }
-    };
-    getUserId();
-  }, []);
 
   const handleRegenerate = async () => {
     if (!userPrompt.trim()) {
       toast.error("Please enter how you'd like to modify the workout");
-      return;
-    }
-
-    if (!userId) {
-      toast.error("Please sign in to update workouts");
       return;
     }
 
@@ -63,18 +47,22 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         if (data.notes) onChange("notes", data.notes);
         
         // Store the workout update in workout_history
-        const { error: historyError } = await supabase
-          .from('workout_history')
-          .insert({
-            workout_id: workout.id,
-            user_id: userId,
-            prompt: userPrompt,
-            previous_wod: workout.wod,
-            new_wod: data.wod
-          });
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const { error: historyError } = await supabase
+            .from('workout_history')
+            .insert({
+              workout_id: workout.id,
+              user_id: user.id,
+              prompt: userPrompt,
+              previous_wod: workout.wod,
+              new_wod: data.wod
+            });
 
-        if (historyError) {
-          console.error('Error saving workout history:', historyError);
+          if (historyError) {
+            console.error('Error saving workout history:', historyError);
+          }
         }
 
         setUserPrompt("");
