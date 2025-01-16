@@ -30,47 +30,68 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
     
     setIsRegenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('regenerate-workout', {
-        body: {
-          warmUp: workout.warmUp,
-          wod: workout.wod,
-          notes: workout.notes,
-          userPrompt: userPrompt,
-          day: workout.day
-        }
+      // Prepare and log request data
+      const requestBody = {
+        warmUp: workout.warmUp,
+        wod: workout.wod,
+        notes: workout.notes,
+        userPrompt: userPrompt,
+        day: workout.day
+      };
+      console.log('Sending request to regenerate-workout:', requestBody);
+
+      const { data: responseData, error: responseError } = await supabase.functions.invoke('regenerate-workout', {
+        body: requestBody
       });
 
-      console.log('Received response from regenerate-workout:', data);
+      console.log('Raw response from regenerate-workout:', responseData);
 
-      if (error) {
-        console.error('Error from regenerate-workout:', error);
-        throw error;
+      if (responseError) {
+        console.error('Error from regenerate-workout:', responseError);
+        throw responseError;
       }
 
-      if (!data) {
+      if (!responseData) {
+        console.error('No data received from regenerate-workout');
         throw new Error('No data received from regenerate-workout');
       }
 
-      // Validate the response structure
-      const { warmUp, wod, notes } = data;
-      
-      if (typeof warmUp !== 'string' || typeof wod !== 'string' || typeof notes !== 'string') {
-        console.error('Invalid data structure received:', data);
+      // Type guard to ensure response structure
+      const isValidWorkoutResponse = (data: any): data is { warmUp: string; wod: string; notes: string } => {
+        return (
+          typeof data === 'object' &&
+          data !== null &&
+          typeof data.warmUp === 'string' &&
+          typeof data.wod === 'string' &&
+          typeof data.notes === 'string'
+        );
+      };
+
+      if (!isValidWorkoutResponse(responseData)) {
+        console.error('Invalid response structure:', responseData);
         throw new Error('Invalid workout data structure received');
       }
 
-      // Update all fields with Gemini's response
+      const { warmUp, wod, notes } = responseData;
+      
+      console.log('Updating workout with validated data:', { warmUp, wod, notes });
+
+      // Update workout fields
       onChange("warmUp", warmUp);
       onChange("wod", wod);
       onChange("notes", notes);
       
       // Save workout history
-      await saveWorkoutHistory({
+      const historyResult = await saveWorkoutHistory({
         workoutId: workout.id,
         userPrompt,
         previousWod: workout.wod,
         newWod: wod,
       });
+
+      if (!historyResult) {
+        console.warn('Failed to save workout history');
+      }
 
       setUserPrompt("");
       toast.success(`${workout.day}'s workout updated successfully!`);
