@@ -1,11 +1,7 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Volume2, RefreshCw } from "lucide-react";
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { WorkoutSpeech } from "./WorkoutSpeech";
+import { WorkoutRegeneration } from "./WorkoutRegeneration";
 
 interface WorkoutCardProps {
   workout: {
@@ -18,96 +14,7 @@ interface WorkoutCardProps {
   onSpeak: () => void;
 }
 
-const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
-  const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const [userPrompt, setUserPrompt] = useState("");
-
-  const handleSpeak = async () => {
-    setIsGeneratingVoice(true);
-    try {
-      // Format text for natural speech by replacing special characters
-      const formatForSpeech = (text: string) => {
-        return text
-          .replace(/\//g, ' or ')
-          .replace(/-/g, ' to ')
-          .replace(/\n/g, '. ')
-          .replace(/\s+/g, ' ')
-          .trim();
-      };
-
-      const speechText = `Today is ${workout.day}. For warm up: ${formatForSpeech(workout.warmUp)}. Workout of the day: ${formatForSpeech(workout.wod)}. ${workout.notes ? `Important notes: ${formatForSpeech(workout.notes)}.` : ''}`;
-
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text: speechText }
-      });
-
-      if (error) throw error;
-
-      if (data?.audioContent) {
-        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-        await audio.play();
-      }
-    } catch (error) {
-      console.error('Error generating speech:', error);
-      toast.error("Failed to generate speech. Please try again.");
-    } finally {
-      setIsGeneratingVoice(false);
-    }
-  };
-
-  const handleRegenerate = async () => {
-    if (!userPrompt.trim()) {
-      toast.error("Please enter how you'd like to modify the workout");
-      return;
-    }
-
-    setIsRegenerating(true);
-    try {
-      console.log('Sending regenerate request with:', {
-        warmUp: workout.warmUp,
-        wod: workout.wod,
-        notes: workout.notes,
-        userPrompt
-      });
-
-      const { data, error } = await supabase.functions.invoke('regenerate-workout', {
-        body: {
-          warmUp: workout.warmUp,
-          wod: workout.wod,
-          notes: workout.notes,
-          userPrompt: userPrompt
-        }
-      });
-
-      if (error) throw error;
-
-      console.log('Received regenerated workout:', data);
-
-      if (data && typeof data === 'object') {
-        // Update each section individually to ensure all changes are applied
-        if (data.warmUp && data.warmUp !== workout.warmUp) {
-          onChange("warmUp", data.warmUp);
-        }
-        if (data.wod && data.wod !== workout.wod) {
-          onChange("wod", data.wod);
-        }
-        if (data.notes && data.notes !== workout.notes) {
-          onChange("notes", data.notes);
-        }
-        setUserPrompt("");
-        toast.success("Workout regenerated successfully!");
-      } else {
-        throw new Error('Invalid response format from regenerate-workout');
-      }
-    } catch (error) {
-      console.error('Error regenerating workout:', error);
-      toast.error("Failed to regenerate workout. Please try again.");
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
-
+const WorkoutCard = ({ workout, onChange }: WorkoutCardProps) => {
   return (
     <Card className="relative w-full animate-fade-in border-2 border-primary bg-white">
       <CardHeader className="relative border-b-2 border-primary bg-card">
@@ -117,7 +24,9 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
       </CardHeader>
       <CardContent className="space-y-4 p-6">
         <div className="space-y-2 rounded bg-[#F5EFE0] p-4">
-          <label className="text-sm font-bold uppercase tracking-tight text-secondary">Warm-up</label>
+          <label className="text-sm font-bold uppercase tracking-tight text-secondary">
+            Warm-up
+          </label>
           <Textarea
             value={workout.warmUp}
             onChange={(e) => onChange("warmUp", e.target.value)}
@@ -126,7 +35,9 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
         </div>
 
         <div className="space-y-2 rounded bg-[#F5EFE0] p-4">
-          <label className="text-sm font-bold uppercase tracking-tight text-secondary">WOD</label>
+          <label className="text-sm font-bold uppercase tracking-tight text-secondary">
+            WOD
+          </label>
           <Textarea
             value={workout.wod}
             onChange={(e) => onChange("wod", e.target.value)}
@@ -135,7 +46,9 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
         </div>
 
         <div className="space-y-2 rounded bg-[#F5EFE0] p-4">
-          <label className="text-sm font-bold uppercase tracking-tight text-secondary">Notes</label>
+          <label className="text-sm font-bold uppercase tracking-tight text-secondary">
+            Notes
+          </label>
           <Textarea
             value={workout.notes}
             onChange={(e) => onChange("notes", e.target.value)}
@@ -143,32 +56,8 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
           />
         </div>
 
-        <Button 
-          onClick={handleSpeak}
-          disabled={isGeneratingVoice}
-          className="w-full border-2 border-accent bg-card font-bold uppercase tracking-tight text-accent transition-colors hover:bg-accent hover:text-white disabled:opacity-50"
-        >
-          <Volume2 className="mr-2 h-4 w-4" />
-          {isGeneratingVoice ? "Generating..." : "Speak Workout"}
-        </Button>
-
-        <div className="space-y-2">
-          <Input
-            placeholder="How would you like to modify this workout?"
-            value={userPrompt}
-            onChange={(e) => setUserPrompt(e.target.value)}
-            className="border-2 border-accent bg-card font-medium text-white"
-          />
-          
-          <Button 
-            onClick={handleRegenerate}
-            disabled={isRegenerating}
-            className="w-full border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            {isRegenerating ? "Regenerating..." : "Regenerate Workout"}
-          </Button>
-        </div>
+        <WorkoutSpeech workout={workout} />
+        <WorkoutRegeneration workout={workout} onChange={onChange} />
       </CardContent>
     </Card>
   );
