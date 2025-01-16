@@ -8,14 +8,14 @@ interface WorkoutSectionProps {
 }
 
 export const WorkoutSection = ({ label, value, onChange, minHeight = "80px" }: WorkoutSectionProps) => (
-  <div className="space-y-2 rounded bg-[#F5EFE0] p-4">
+  <div className="space-y-2 rounded bg-card p-4 border-2 border-accent">
     <label className="text-sm font-bold uppercase tracking-tight text-secondary">
       {label}
     </label>
     <Textarea
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={`min-h-[${minHeight}] resize-y border-2 border-accent bg-card font-medium text-white`}
+      className={`min-h-[${minHeight}] resize-y bg-background font-medium text-foreground`}
     />
   </div>
 );
