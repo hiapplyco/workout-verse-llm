@@ -83,17 +83,17 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       }
     },
     onSuccess: (data) => {
-      // Clear workout content state
-      setWorkoutContent(null);
+      console.log('Updating workout fields with:', data);
       
       // Update all workout fields with new data
-      Object.entries(data).forEach(([key, value]) => {
-        if (key === "warmup" || key === "wod" || key === "notes") {
-          onChange(key, value);
-        }
-      });
+      if (data.warmup) onChange("warmup", data.warmup);
+      if (data.wod) onChange("wod", data.wod);
+      if (data.notes) onChange("notes", data.notes);
       
+      // Clear workout content state
+      setWorkoutContent(null);
       setUserPrompt("");
+      
       toast.success(`${workout.day}'s workout updated successfully!`);
     },
     onError: (error: Error) => {
