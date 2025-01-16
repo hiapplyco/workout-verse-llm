@@ -19,6 +19,16 @@ export const saveWorkoutHistory = async ({
     
     if (user) {
       console.log('Saving workout history for user:', user.id);
+      console.log('Workout ID:', workoutId); // Add this log
+      
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(workoutId)) {
+        console.error('Invalid UUID format for workout_id:', workoutId);
+        toast.error('Invalid workout ID format');
+        return false;
+      }
+
       const { error: historyError } = await supabase
         .from('workout_history')
         .insert({
