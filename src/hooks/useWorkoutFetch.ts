@@ -1,0 +1,62 @@
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Workout } from "@/types/workout";
+
+const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+export const useWorkoutFetch = () => {
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+
+  const sortWorkouts = (workoutsToSort: Workout[]) => {
+    return workoutsToSort.sort((a, b) => {
+      const dayA = WEEKDAYS.indexOf(a.day);
+      const dayB = WEEKDAYS.indexOf(b.day);
+      return dayA - dayB;
+    });
+  };
+
+  const fetchWorkouts = async (userId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('No valid session found');
+        toast.error('Please sign in to view workouts');
+        return;
+      }
+
+      const { data: existingWorkouts, error: fetchError } = await supabase
+        .from('workouts')
+        .select('*')
+        .eq('user_id', userId)
+        .in('day', WEEKDAYS)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (fetchError) {
+        console.error('Error fetching workouts:', fetchError);
+        toast.error('Failed to fetch workouts');
+        return;
+      }
+
+      if (!existingWorkouts?.length) {
+        console.log('No existing workouts found');
+        toast.info('Welcome! Generate your weekly workout plan using the form above.');
+      } else {
+        console.log('Existing workouts found:', existingWorkouts);
+        setWorkouts(sortWorkouts(existingWorkouts));
+      }
+    } catch (error) {
+      console.error('Error in fetchWorkouts:', error);
+      toast.error('Failed to fetch workouts. Please try signing in again.');
+    }
+  };
+
+  return {
+    workouts,
+    setWorkouts,
+    fetchWorkouts,
+    sortWorkouts,
+  };
+};

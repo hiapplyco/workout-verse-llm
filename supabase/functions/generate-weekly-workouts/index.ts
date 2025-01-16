@@ -19,38 +19,8 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    const prompt = `
-      You are an expert CrossFit coach creating a comprehensive Monday-Friday workout program.
-      
-      User's request for the week: ${weeklyPrompt}
-      
-      Create a detailed 5-day workout plan (Monday through Friday) that:
-      1. Follows CrossFit programming principles
-      2. Includes progressive overload
-      3. Balances different movement patterns
-      4. Considers recovery between workouts
-      
-      For each day, provide:
-      - A specific warm-up targeting the day's movements
-      - A detailed WOD (Workout of the Day)
-      - Coaching notes with scaling options and tips
-      
-      Return a JSON array with exactly 5 objects, one for each weekday, in this format:
-      [
-        {
-          "day": "Monday",
-          "warmup": "detailed warm-up plan",
-          "wod": "workout of the day",
-          "notes": "coaching cues and tips"
-        },
-        // ... (repeat for each weekday)
-      ]
-
-      Do not use any markdown formatting characters like *, _, #, or \` in your response.
-    `;
-
-    console.log('Sending prompt to Gemini:', prompt);
-    const result = await model.generateContent(prompt);
+    console.log('Sending prompt to Gemini:', weeklyPrompt);
+    const result = await model.generateContent(weeklyPrompt);
     const response = result.response;
     const text = response.text();
     console.log('Received raw response from Gemini:', text);
