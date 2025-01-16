@@ -57,8 +57,8 @@ const WorkoutCard = ({ workout, onChange }: WorkoutCardProps) => {
   };
 
   return (
-    <Card className="relative w-full animate-fade-in border-2 border-primary bg-white">
-      <CardHeader className="relative border-b-2 border-primary bg-card">
+    <Card className="relative w-full animate-fade-in border-[4px] border-primary bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+      <CardHeader className="relative border-b-[4px] border-primary bg-card">
         <WorkoutHeader day={workout.day} onExport={handleExportToCalendar} />
       </CardHeader>
       <CardContent className="space-y-4 p-6">
