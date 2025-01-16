@@ -33,12 +33,8 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
   const handleSpeak = async () => {
     setIsGeneratingVoice(true);
     try {
-      const speechText = `
-        Today is ${workout.day}.
-        For warm up: ${workout.warmUp}.
-        Workout of the day: ${workout.wod}.
-        Important notes: ${workout.notes}.
-      `;
+      // Format text without template literals to minimize whitespace
+      const speechText = `Today is ${workout.day}. For warm up: ${workout.warmUp}. Workout of the day: ${workout.wod}. ${workout.notes ? `Important notes: ${workout.notes}.` : ''}`;
 
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
         body: { text: speechText }
@@ -92,7 +88,6 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
             className="min-h-[60px] resize-y border-2 border-accent bg-card font-medium text-white"
           />
         </div>
-
         <div className="space-y-4">
           <Button 
             onClick={() => setShowPrompt(!showPrompt)} 

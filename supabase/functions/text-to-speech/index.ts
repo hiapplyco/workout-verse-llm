@@ -5,6 +5,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Process base64 in chunks to prevent memory issues
+function processBase64Chunks(buffer: ArrayBuffer, chunkSize = 32768) {
+  const uint8Array = new Uint8Array(buffer);
+  let result = '';
+  for (let i = 0; i < uint8Array.length; i += chunkSize) {
+    const chunk = uint8Array.slice(i, i + chunkSize);
+    result += String.fromCharCode.apply(null, chunk);
+  }
+  return btoa(result);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -35,17 +46,20 @@ serve(async (req) => {
     })
 
     if (!response.ok) {
-      throw new Error('Failed to generate speech')
+      const errorData = await response.text();
+      console.error('ElevenLabs API error:', errorData);
+      throw new Error('Failed to generate speech');
     }
 
     const audioBuffer = await response.arrayBuffer()
-    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)))
+    const base64Audio = processBase64Chunks(audioBuffer);
 
     return new Response(
       JSON.stringify({ audioContent: base64Audio }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    console.error('Error in text-to-speech function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
