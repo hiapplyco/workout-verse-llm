@@ -20,7 +20,7 @@ serve(async (req) => {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const prompt = `
-      You are an expert CrossFit coach creating a comprehensive weekly workout program.
+      You are an expert CrossFit coach creating a comprehensive Monday-Friday workout program.
       
       User's request for the week: ${weeklyPrompt}
       
@@ -35,7 +35,7 @@ serve(async (req) => {
       - A detailed WOD (Workout of the Day)
       - Coaching notes with scaling options and tips
       
-      Return a JSON array with 5 objects, one for each day, in this format:
+      Return a JSON array with exactly 5 objects, one for each weekday, in this format:
       [
         {
           "day": "Monday",
@@ -43,7 +43,7 @@ serve(async (req) => {
           "wod": "workout of the day",
           "notes": "coaching cues and tips"
         },
-        // ... (repeat for each day)
+        // ... (repeat for each weekday)
       ]
 
       Do not use any markdown formatting characters like *, _, #, or \` in your response.
