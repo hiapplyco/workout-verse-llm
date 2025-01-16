@@ -39,12 +39,14 @@ serve(async (req) => {
       [
         {
           "day": "Monday",
-          "warmUp": "detailed warm-up plan",
+          "warmup": "detailed warm-up plan",
           "wod": "workout of the day",
           "notes": "coaching cues and tips"
         },
         // ... (repeat for each day)
       ]
+
+      Do not use any markdown formatting characters like *, _, #, or ` in your response.
     `;
 
     console.log('Sending prompt to Gemini:', prompt);
@@ -59,12 +61,20 @@ serve(async (req) => {
       throw new Error('Failed to parse Gemini response as JSON');
     }
     
-    const weeklyWorkouts = JSON.parse(jsonMatch[0]);
+    let weeklyWorkouts = JSON.parse(jsonMatch[0]);
     console.log('Successfully parsed weekly workouts:', weeklyWorkouts);
 
     if (!Array.isArray(weeklyWorkouts) || weeklyWorkouts.length !== 5) {
       throw new Error('Invalid weekly workout format received from AI');
     }
+
+    // Clean up any remaining markdown characters from all text fields
+    weeklyWorkouts = weeklyWorkouts.map(workout => ({
+      ...workout,
+      warmup: workout.warmup.replace(/[*_#`]/g, ''),
+      wod: workout.wod.replace(/[*_#`]/g, ''),
+      notes: workout.notes.replace(/[*_#`]/g, '')
+    }));
 
     return new Response(JSON.stringify(weeklyWorkouts), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
