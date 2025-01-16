@@ -19,49 +19,67 @@ export const useWorkouts = () => {
   };
 
   const fetchWorkouts = async (userId: string) => {
-    const { data: existingWorkouts, error: fetchError } = await supabase
-      .from('workouts')
-      .select('*')
-      .eq('user_id', userId)
-      .in('day', WEEKDAYS)
-      .order('created_at', { ascending: false })
-      .limit(5);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        console.error('No valid session found');
+        toast.error('Please sign in to view workouts');
+        return;
+      }
 
-    if (fetchError) {
-      console.error('Error fetching workouts:', fetchError);
-      toast.error('Failed to fetch workouts');
-      return;
-    }
+      const { data: existingWorkouts, error: fetchError } = await supabase
+        .from('workouts')
+        .select('*')
+        .eq('user_id', userId)
+        .in('day', WEEKDAYS)
+        .order('created_at', { ascending: false })
+        .limit(5);
 
-    if (!existingWorkouts?.length) {
-      console.log('No existing workouts found');
-      toast.info('Welcome! Generate your weekly workout plan using the form above.');
-    } else {
-      console.log('Existing workouts found:', existingWorkouts);
-      setWorkouts(sortWorkouts(existingWorkouts));
+      if (fetchError) {
+        console.error('Error fetching workouts:', fetchError);
+        toast.error('Failed to fetch workouts');
+        return;
+      }
+
+      if (!existingWorkouts?.length) {
+        console.log('No existing workouts found');
+        toast.info('Welcome! Generate your weekly workout plan using the form above.');
+      } else {
+        console.log('Existing workouts found:', existingWorkouts);
+        setWorkouts(sortWorkouts(existingWorkouts));
+      }
+    } catch (error) {
+      console.error('Error in fetchWorkouts:', error);
+      toast.error('Failed to fetch workouts. Please try signing in again.');
     }
   };
 
   const handleChange = async (index: number, key: string, value: string) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      toast.error('You must be logged in to update workouts');
-      return;
-    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        toast.error('You must be logged in to update workouts');
+        return;
+      }
 
-    const newWorkouts = [...workouts];
-    newWorkouts[index] = { ...newWorkouts[index], [key]: value };
-    setWorkouts(newWorkouts);
+      const newWorkouts = [...workouts];
+      newWorkouts[index] = { ...newWorkouts[index], [key]: value };
+      setWorkouts(newWorkouts);
 
-    const { error } = await supabase
-      .from('workouts')
-      .update({ [key]: value })
-      .eq('id', workouts[index].id)
-      .eq('user_id', session.user.id);
+      const { error } = await supabase
+        .from('workouts')
+        .update({ [key]: value })
+        .eq('id', workouts[index].id)
+        .eq('user_id', session.user.id);
 
-    if (error) {
-      console.error('Error updating workout:', error);
-      toast.error('Failed to save workout changes');
+      if (error) {
+        console.error('Error updating workout:', error);
+        toast.error('Failed to save workout changes');
+      }
+    } catch (error) {
+      console.error('Error in handleChange:', error);
+      toast.error('Failed to update workout');
     }
   };
 
@@ -71,14 +89,15 @@ export const useWorkouts = () => {
       return;
     }
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      toast.error('You must be logged in to generate workouts');
-      return;
-    }
-
-    setIsGenerating(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        toast.error('You must be logged in to generate workouts');
+        return;
+      }
+
+      setIsGenerating(true);
+      
       const { data, error } = await supabase.functions.invoke('generate-weekly-workouts', {
         body: { weeklyPrompt }
       });
