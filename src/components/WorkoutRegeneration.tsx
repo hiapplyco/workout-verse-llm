@@ -10,7 +10,7 @@ interface WorkoutRegenerationProps {
   workout: {
     id: string;
     day: string;
-    warm_up: string;
+    warmup: string;
     wod: string;
     notes: string;
   };
@@ -20,7 +20,7 @@ interface WorkoutRegenerationProps {
 export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationProps) => {
   const [userPrompt, setUserPrompt] = useState("");
   const [optimisticData, setOptimisticData] = useState<null | {
-    warm_up: string;
+    warmup: string;
     wod: string;
     notes: string;
   }>(null);
@@ -38,7 +38,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       console.log('User prompt:', prompt);
 
       const originalWorkout = {
-        warm_up: workout.warm_up,
+        warmup: workout.warmup,
         wod: workout.wod,
         notes: workout.notes
       };
@@ -51,15 +51,15 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
             workout_id: workout.id,
             user_id: user.id,
             prompt: prompt,
-            previous_wod: originalWorkout.wod,
-            new_wod: originalWorkout.wod,
+            previouswod: originalWorkout.wod,
+            newwod: originalWorkout.wod,
           });
 
         if (historyError) throw historyError;
 
         // Set optimistic data (empty fields while loading)
         setOptimisticData({
-          warm_up: "",
+          warmup: "",
           wod: "",
           notes: ""
         });
@@ -70,7 +70,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         // Update workout history with new WOD
         const { error: updateHistoryError } = await supabase
           .from('workout_history')
-          .update({ new_wod: data.wod })
+          .update({ newwod: data.wod })
           .eq('workout_id', workout.id)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
@@ -91,7 +91,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       
       // Update all workout fields with new data
       Object.entries(data).forEach(([key, value]) => {
-        if (key === "warm_up" || key === "wod" || key === "notes") {
+        if (key === "warmup" || key === "wod" || key === "notes") {
           onChange(key, value);
         }
       });

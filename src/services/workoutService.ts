@@ -1,14 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 
 interface RegenerateWorkoutResponse {
-  warm_up: string;
+  warmup: string;
   wod: string;
   notes: string;
 }
 
 export const workoutService = {
   async regenerateWorkout(currentWorkout: {
-    warm_up: string;
+    warmup: string;
     wod: string;
     notes: string;
   }, userPrompt: string, day: string): Promise<RegenerateWorkoutResponse> {
