@@ -20,9 +20,9 @@ export const useWorkouts = () => {
 
   const fetchWorkouts = async (userId: string) => {
     try {
-      const { data: session } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session?.access_token) {
+      if (!session) {
         console.error('No valid session found');
         toast.error('Please sign in to view workouts');
         return;
