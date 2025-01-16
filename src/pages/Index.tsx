@@ -20,6 +20,37 @@ const Index = () => {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error || !user) {
         navigate("/auth");
+        return;
+      }
+
+      // Fetch existing workouts for the user
+      const { data: existingWorkouts } = await supabase
+        .from('workouts')
+        .select('id, day')
+        .eq('user_id', user.id);
+
+      // If no workouts exist for the user, insert the initial workouts
+      if (!existingWorkouts?.length) {
+        console.log('No existing workouts found, inserting initial workouts');
+        const workoutsToInsert = initialWorkouts.map(workout => ({
+          ...workout,
+          user_id: user.id,
+          warm_up: workout.warmUp, // Match the database column name
+        }));
+
+        const { error: insertError } = await supabase
+          .from('workouts')
+          .insert(workoutsToInsert);
+
+        if (insertError) {
+          console.error('Error inserting initial workouts:', insertError);
+          toast.error('Failed to initialize workouts');
+          return;
+        }
+
+        toast.success('Initial workouts created successfully!');
+      } else {
+        console.log('Existing workouts found:', existingWorkouts);
       }
     };
 
