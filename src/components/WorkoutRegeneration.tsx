@@ -50,7 +50,6 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       };
 
       try {
-        // Save initial workout history
         const { error: historyError } = await supabase
           .from('workout_history')
           .insert({
@@ -63,7 +62,6 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
         if (historyError) throw historyError;
 
-        // Generate new content using all three agents concurrently
         const [warmupResponse, wodResponse, notesResponse] = await Promise.all([
           workoutAgents.generateWarmup(originalWorkout, prompt, workout.day),
           workoutAgents.generateWOD(originalWorkout, prompt, workout.day),
@@ -71,14 +69,13 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         ]);
 
         const newWorkout = {
-          warmup: warmupResponse.content,
-          wod: wodResponse.content,
-          notes: notesResponse.content
+          warmup: warmupResponse.content.replace(/[*_#`]/g, ''),
+          wod: wodResponse.content.replace(/[*_#`]/g, ''),
+          notes: notesResponse.content.replace(/[*_#`]/g, '')
         };
 
         console.log('Generated new workout content:', newWorkout);
 
-        // Update workout history with new WOD
         const { error: updateHistoryError } = await supabase
           .from('workout_history')
           .update({ newwod: newWorkout.wod })
@@ -141,7 +138,6 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         onRegenerate={handleRegenerate}
       />
 
-      {/* Preview sections */}
       {workoutContent.warmup !== null && (
         <div className="rounded border-2 border-primary bg-background p-4">
           <div className="mb-2 flex items-center justify-between">
