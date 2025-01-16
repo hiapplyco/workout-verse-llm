@@ -44,12 +44,28 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         notes: workout.notes
       };
 
-      // Clear the fields immediately
-      onChange("warmUp", "");
-      onChange("wod", "");
-      onChange("notes", "");
-
       try {
+        // Save workout history before making any changes
+        const { error: historyError } = await supabase
+          .from('workout_history')
+          .insert({
+            workout_id: workout.id,
+            user_id: user.id,
+            prompt: prompt,
+            previous_wod: originalWorkout.wod,
+            new_wod: originalWorkout.wod, // Will be updated after regeneration
+          });
+
+        if (historyError) {
+          console.error('Error saving workout history:', historyError);
+          throw historyError;
+        }
+
+        // Clear the fields immediately
+        onChange("warmUp", "");
+        onChange("wod", "");
+        onChange("notes", "");
+
         const { data, error } = await supabase.functions.invoke<RegenerateWorkoutResponse>('regenerate-workout', {
           body: {
             warmUp: originalWorkout.warmUp,
@@ -89,21 +105,19 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         }
 
         console.log('Updating workout with validated data:', data);
-        
-        // Save workout history before updating the workout
-        const { error: historyError } = await supabase
-          .from('workout_history')
-          .insert({
-            workout_id: workout.id,
-            user_id: user.id,
-            prompt: prompt,
-            previous_wod: originalWorkout.wod,
-            new_wod: data.wod,
-          });
 
-        if (historyError) {
-          console.error('Error saving workout history:', historyError);
-          throw historyError;
+        // Update the workout history with the new WOD
+        const { error: updateHistoryError } = await supabase
+          .from('workout_history')
+          .update({ new_wod: data.wod })
+          .eq('workout_id', workout.id)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (updateHistoryError) {
+          console.error('Error updating workout history:', updateHistoryError);
+          throw updateHistoryError;
         }
 
         return data;
