@@ -61,17 +61,22 @@ serve(async (req) => {
       modifiedWorkout = JSON.parse(jsonMatch[0]);
       console.log('Successfully parsed workout:', modifiedWorkout);
 
-      // Validate the response has all required fields
-      if (!modifiedWorkout.warmUp || !modifiedWorkout.wod || !modifiedWorkout.notes) {
-        throw new Error('Incomplete workout data received from AI');
-      }
-
-      // Ensure proper casing for consistency
+      // Normalize the response to use camelCase
       const formattedWorkout = {
         warmUp: modifiedWorkout.warmUp || modifiedWorkout.warm_up,
         wod: modifiedWorkout.wod,
         notes: modifiedWorkout.notes
       };
+
+      // Validate all required fields are present and are strings
+      if (
+        typeof formattedWorkout.warmUp !== 'string' || 
+        typeof formattedWorkout.wod !== 'string' || 
+        typeof formattedWorkout.notes !== 'string'
+      ) {
+        console.error('Invalid data structure received:', formattedWorkout);
+        throw new Error('Invalid workout data structure received');
+      }
 
       console.log('Formatted workout for frontend:', formattedWorkout);
       return new Response(JSON.stringify(formattedWorkout), {
