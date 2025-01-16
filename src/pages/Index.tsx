@@ -8,9 +8,17 @@ import { Wand2, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { initialWorkouts } from "@/data/initialWorkouts";
 
+type Workout = {
+  id: string;
+  day: string;
+  warmup: string;
+  wod: string;
+  notes: string;
+};
+
 const Index = () => {
   const navigate = useNavigate();
-  const [workouts, setWorkouts] = useState(initialWorkouts);
+  const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts);
   const [weeklyPrompt, setWeeklyPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -56,7 +64,7 @@ const Index = () => {
         toast.success('Initial workouts created successfully!');
       } else {
         console.log('Existing workouts found:', existingWorkouts);
-        setWorkouts(existingWorkouts);
+        setWorkouts(existingWorkouts as Workout[]);
       }
     };
 
@@ -78,10 +86,10 @@ const Index = () => {
     setWorkouts(newWorkouts);
   };
 
-  const handleSpeakPlan = async (workout: typeof initialWorkouts[0]) => {
+  const handleSpeakPlan = async (workout: Workout) => {
     const speechText = `
       Today is ${workout.day}.
-      Warm Up: ${workout.warm_up}.
+      Warm Up: ${workout.warmup}.
       Workout Of the Day: ${workout.wod}.
       Notes: ${workout.notes}.
     `;
