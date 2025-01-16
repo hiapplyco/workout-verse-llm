@@ -148,9 +148,10 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
             <h3 className="text-sm font-bold uppercase text-secondary">New Warmup</h3>
             <div className="space-x-2">
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={() => handleApplyChanges("warmup", workoutContent.warmup)}
+                className="bg-primary text-white hover:bg-primary/90"
               >
                 Apply Changes
               </Button>
@@ -166,9 +167,10 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
             <h3 className="text-sm font-bold uppercase text-secondary">New WOD</h3>
             <div className="space-x-2">
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={() => handleApplyChanges("wod", workoutContent.wod)}
+                className="bg-primary text-white hover:bg-primary/90"
               >
                 Apply Changes
               </Button>
@@ -184,9 +186,10 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
             <h3 className="text-sm font-bold uppercase text-secondary">New Notes</h3>
             <div className="space-x-2">
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={() => handleApplyChanges("notes", workoutContent.notes)}
+                className="bg-primary text-white hover:bg-primary/90"
               >
                 Apply Changes
               </Button>
