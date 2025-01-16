@@ -156,7 +156,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
               </Button>
             </div>
           </div>
-          <p className="whitespace-pre-wrap font-medium">{workoutContent.warmup}</p>
+          <p className="whitespace-pre-wrap font-medium text-black">{workoutContent.warmup}</p>
         </div>
       )}
 
@@ -174,7 +174,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
               </Button>
             </div>
           </div>
-          <p className="whitespace-pre-wrap font-medium">{workoutContent.wod}</p>
+          <p className="whitespace-pre-wrap font-medium text-black">{workoutContent.wod}</p>
         </div>
       )}
 
@@ -192,7 +192,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
               </Button>
             </div>
           </div>
-          <p className="whitespace-pre-wrap font-medium">{workoutContent.notes}</p>
+          <p className="whitespace-pre-wrap font-medium text-black">{workoutContent.notes}</p>
         </div>
       )}
 
