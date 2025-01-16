@@ -14,7 +14,8 @@ serve(async (req) => {
 
   try {
     const { warmUp, wod, notes, userPrompt } = await req.json();
-    
+    console.log('Received request with data:', { warmUp, wod, notes, userPrompt });
+
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
@@ -26,12 +27,12 @@ serve(async (req) => {
       Workout of the Day (WOD): ${wod}
       Notes: ${notes || 'None'}
       
-      User request: ${userPrompt || 'Make this workout more challenging while maintaining the same structure'}
+      User request: ${userPrompt}
       
       Important instructions:
       1. You MUST modify ALL three sections (warm-up, WOD, and notes) according to the user's request
       2. Keep similar movement patterns but adjust intensity/complexity based on the request
-      3. Return the modified workout in this exact JSON format:
+      3. Return ONLY a valid JSON object in this exact format, with no additional text or explanation:
       {
         "warmUp": "modified warm-up here",
         "wod": "modified WOD here",
@@ -43,16 +44,17 @@ serve(async (req) => {
       - Replace "-" with "to"
       - Use complete sentences
       - Avoid special characters
-      - Each section should be significantly different from the original
+      - Each section MUST be different from the original
       
       Remember: You MUST modify ALL sections while maintaining proper exercise progression and safety.
+      Do not include any text outside of the JSON object in your response.
     `;
 
     console.log('Sending prompt to Gemini:', prompt);
     const result = await model.generateContent(prompt);
     const response = result.response;
     const text = response.text();
-    console.log('Received response from Gemini:', text);
+    console.log('Received raw response from Gemini:', text);
     
     // Extract the JSON from the response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -61,17 +63,27 @@ serve(async (req) => {
       throw new Error('Failed to parse Gemini response as JSON');
     }
     
-    const modifiedWorkout = JSON.parse(jsonMatch[0]);
+    let modifiedWorkout;
+    try {
+      modifiedWorkout = JSON.parse(jsonMatch[0]);
+      console.log('Successfully parsed JSON:', modifiedWorkout);
+    } catch (error) {
+      console.error('JSON parse error:', error);
+      throw new Error('Invalid JSON format in AI response');
+    }
 
-    // Ensure all fields are present and different from original
+    // Validate all required fields are present
     if (!modifiedWorkout.warmUp || !modifiedWorkout.wod || !modifiedWorkout.notes) {
-      console.error('Incomplete workout data received from AI');
+      console.error('Missing required fields in response:', modifiedWorkout);
       throw new Error('Incomplete workout data received from AI');
     }
 
-    // Validate that changes were made
+    // Validate that changes were actually made
     if (modifiedWorkout.warmUp === warmUp || modifiedWorkout.wod === wod) {
-      console.error('AI response too similar to original workout');
+      console.error('Generated workout too similar to original:', {
+        original: { warmUp, wod },
+        modified: { warmUp: modifiedWorkout.warmUp, wod: modifiedWorkout.wod }
+      });
       throw new Error('Generated workout too similar to original. Please try again.');
     }
 
