@@ -21,30 +21,24 @@ serve(async (req) => {
 
     const prompt = `
       You are an expert CrossFit coach creating a workout for ${day}.
+      The user wants to: ${userPrompt}
       
       Current workout:
       Warm-up: ${warmUp}
       WOD (Workout of the Day): ${wod}
       Notes: ${notes}
       
-      User request: ${userPrompt}
+      If the user wants a rest day, respond with a proper active recovery workout.
       
-      Create a completely new CrossFit workout that:
-      1. Has a different warm-up targeting the main movements
+      Create a new workout that:
+      1. Has an appropriate warm-up
       2. Changes the WOD based on the user's request
       3. Provides specific coaching notes
       
-      Important rules:
-      - DO NOT keep any exercises from the original workout
-      - Create entirely new exercises for both warm-up and WOD
-      - Ensure the warm-up properly prepares for the WOD
-      - Include specific rep schemes and weights
-      - Make the workout challenging but scalable
-      
-      Return ONLY a JSON object with this exact format:
+      Return ONLY a JSON object with this exact format (use camelCase):
       {
-        "warmUp": "detailed warm-up plan with new exercises",
-        "wod": "new workout of the day",
+        "warmUp": "detailed warm-up plan",
+        "wod": "workout of the day",
         "notes": "specific coaching notes"
       }
     `;
@@ -55,6 +49,7 @@ serve(async (req) => {
     const text = response.text();
     console.log('Received raw response from Gemini:', text);
     
+    // Extract JSON from the response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.error('Failed to parse Gemini response as JSON');
@@ -66,24 +61,27 @@ serve(async (req) => {
       modifiedWorkout = JSON.parse(jsonMatch[0]);
       console.log('Successfully parsed workout:', modifiedWorkout);
 
-      // Validate the response has all required fields and they're not empty
-      if (!modifiedWorkout.warmUp?.trim() || !modifiedWorkout.wod?.trim() || !modifiedWorkout.notes?.trim()) {
+      // Validate the response has all required fields
+      if (!modifiedWorkout.warmUp || !modifiedWorkout.wod || !modifiedWorkout.notes) {
         throw new Error('Incomplete workout data received from AI');
       }
 
-      // Validate the response isn't just repeating the original workout
-      if (modifiedWorkout.warmUp === warmUp || modifiedWorkout.wod === wod) {
-        throw new Error('AI generated the same workout as before');
-      }
+      // Ensure proper casing for consistency
+      const formattedWorkout = {
+        warmUp: modifiedWorkout.warmUp || modifiedWorkout.warm_up,
+        wod: modifiedWorkout.wod,
+        notes: modifiedWorkout.notes
+      };
+
+      console.log('Formatted workout for frontend:', formattedWorkout);
+      return new Response(JSON.stringify(formattedWorkout), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
 
     } catch (error) {
       console.error('Validation error:', error);
       throw new Error('Invalid workout data received from AI');
     }
-
-    return new Response(JSON.stringify(modifiedWorkout), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
     console.error('Error in regenerate-workout function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
