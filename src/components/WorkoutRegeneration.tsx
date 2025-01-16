@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { WorkoutRegenerationForm } from "./WorkoutRegenerationForm";
 import { saveWorkoutHistory } from "./WorkoutHistoryTracker";
+import { useMutation } from "@tanstack/react-query";
 
 interface WorkoutRegenerationProps {
   workout: {
@@ -15,78 +16,76 @@ interface WorkoutRegenerationProps {
   onChange: (key: string, value: string) => void;
 }
 
+interface RegenerateWorkoutResponse {
+  warmUp: string;
+  wod: string;
+  notes: string;
+}
+
 export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationProps) => {
-  const [isRegenerating, setIsRegenerating] = useState(false);
   const [userPrompt, setUserPrompt] = useState("");
 
-  const handleRegenerate = async () => {
-    if (!userPrompt.trim()) {
-      toast.error("Please enter how you'd like to modify the workout");
-      return;
-    }
+  const regenerateWorkoutMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      console.log('Starting workout regeneration for:', workout.day);
+      console.log('User prompt:', prompt);
 
-    console.log('Starting workout regeneration for:', workout.day);
-    console.log('User prompt:', userPrompt);
-    
-    setIsRegenerating(true);
-    try {
-      // Prepare and log request data
       const requestBody = {
         warmUp: workout.warmUp,
         wod: workout.wod,
         notes: workout.notes,
-        userPrompt: userPrompt,
+        userPrompt: prompt,
         day: workout.day
       };
       console.log('Sending request to regenerate-workout:', requestBody);
 
-      const { data: responseData, error: responseError } = await supabase.functions.invoke('regenerate-workout', {
+      const { data, error } = await supabase.functions.invoke<RegenerateWorkoutResponse>('regenerate-workout', {
         body: requestBody
       });
 
-      console.log('Raw response from regenerate-workout:', responseData);
+      console.log('Raw response from regenerate-workout:', data);
 
-      if (responseError) {
-        console.error('Error from regenerate-workout:', responseError);
-        throw responseError;
+      if (error) {
+        console.error('Error from regenerate-workout:', error);
+        throw error;
       }
 
-      if (!responseData) {
+      if (!data) {
         console.error('No data received from regenerate-workout');
         throw new Error('No data received from regenerate-workout');
       }
 
       // Type guard to ensure response structure
-      const isValidWorkoutResponse = (data: any): data is { warmUp: string; wod: string; notes: string } => {
+      const isValidWorkoutResponse = (response: any): response is RegenerateWorkoutResponse => {
         return (
-          typeof data === 'object' &&
-          data !== null &&
-          typeof data.warmUp === 'string' &&
-          typeof data.wod === 'string' &&
-          typeof data.notes === 'string'
+          typeof response === 'object' &&
+          response !== null &&
+          typeof response.warmUp === 'string' &&
+          typeof response.wod === 'string' &&
+          typeof response.notes === 'string'
         );
       };
 
-      if (!isValidWorkoutResponse(responseData)) {
-        console.error('Invalid response structure:', responseData);
+      if (!isValidWorkoutResponse(data)) {
+        console.error('Invalid response structure:', data);
         throw new Error('Invalid workout data structure received');
       }
 
-      const { warmUp, wod, notes } = responseData;
-      
-      console.log('Updating workout with validated data:', { warmUp, wod, notes });
-
+      console.log('Updating workout with validated data:', data);
+      return data;
+    },
+    onSuccess: async (data) => {
       // Update workout fields
-      onChange("warmUp", warmUp);
-      onChange("wod", wod);
-      onChange("notes", notes);
+      onChange("warmUp", data.warmUp);
+      onChange("wod", data.wod);
+      onChange("notes", data.notes);
       
       // Save workout history
       const historyResult = await saveWorkoutHistory({
         workoutId: workout.id,
         userPrompt,
         previousWod: workout.wod,
-        newWod: wod,
+        newWod: data.wod,
       });
 
       if (!historyResult) {
@@ -95,19 +94,27 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
       setUserPrompt("");
       toast.success(`${workout.day}'s workout updated successfully!`);
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error regenerating workout:', error);
       toast.error(`Failed to update ${workout.day}'s workout. Please try again.`);
-    } finally {
-      setIsRegenerating(false);
     }
+  });
+
+  const handleRegenerate = async () => {
+    if (!userPrompt.trim()) {
+      toast.error("Please enter how you'd like to modify the workout");
+      return;
+    }
+
+    regenerateWorkoutMutation.mutate(userPrompt);
   };
 
   return (
     <WorkoutRegenerationForm
       day={workout.day}
       userPrompt={userPrompt}
-      isRegenerating={isRegenerating}
+      isRegenerating={regenerateWorkoutMutation.isPending}
       onPromptChange={setUserPrompt}
       onRegenerate={handleRegenerate}
     />
