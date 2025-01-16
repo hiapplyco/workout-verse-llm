@@ -80,10 +80,21 @@ const Index = () => {
     }
   };
 
-  const handleChange = (index: number, key: string, value: string) => {
+  const handleChange = async (index: number, key: string, value: string) => {
     const newWorkouts = [...workouts];
     newWorkouts[index] = { ...newWorkouts[index], [key]: value };
     setWorkouts(newWorkouts);
+
+    // Update the workout in Supabase
+    const { error } = await supabase
+      .from('workouts')
+      .update({ [key]: value })
+      .eq('id', workouts[index].id);
+
+    if (error) {
+      console.error('Error updating workout:', error);
+      toast.error('Failed to save workout changes');
+    }
   };
 
   const handleSpeakPlan = async (workout: Workout) => {

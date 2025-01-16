@@ -126,9 +126,6 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
     debouncedRegenerate(userPrompt);
   };
 
-  // Use workout content if available, otherwise use actual workout data
-  const displayData = workoutContent || workout;
-
   return (
     <WorkoutRegenerationForm
       day={workout.day}
