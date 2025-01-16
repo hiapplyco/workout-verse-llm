@@ -79,7 +79,14 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
           onChange={(value) => onChange("notes", value)}
           minHeight="60px"
         />
-        <WorkoutSpeech workout={workout} />
+        <WorkoutSpeech 
+          workout={{
+            day: workout.day,
+            warmUp: workout.warm_up,
+            wod: workout.wod,
+            notes: workout.notes
+          }} 
+        />
         <WorkoutRegeneration workout={workout} onChange={onChange} />
       </CardContent>
     </Card>
