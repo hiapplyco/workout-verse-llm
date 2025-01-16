@@ -51,40 +51,5 @@ export const initialWorkouts = [
     warmup: "3 rounds of: 10 arm circles, 10 leg swings each side",
     wod: "For Time: 50 Wall Balls, 40 Cal Row, 30 Burpees",
     notes: "Break up the wall balls into manageable sets."
-  },
-  {
-    id: crypto.randomUUID(),
-    day: format(addDays(today, 7), 'EEEE, MMM d'),
-    warmup: "2 rounds of: 200m jog, 10 air squats",
-    wod: "5 Rounds: 10 Deadlifts, 15 Box Step-ups, 20 Double-Unders",
-    notes: "Focus on breathing rhythm during double-unders."
-  },
-  {
-    id: crypto.randomUUID(),
-    day: format(addDays(today, 8), 'EEEE, MMM d'),
-    warmup: "3 rounds of: 10 PVC overhead squats, 10 hip extensions",
-    wod: "EMOM 18: Even minutes - 12 KB Swings, Odd minutes - 8 Burpees",
-    notes: "Keep consistent pace throughout."
-  },
-  {
-    id: crypto.randomUUID(),
-    day: format(addDays(today, 9), 'EEEE, MMM d'),
-    warmup: "2 rounds of: 10 walking lunges, 10 push-ups",
-    wod: "For Time: 100 Double-Unders, 80 Air Squats, 60 Sit-ups",
-    notes: "Break up the double-unders as needed."
-  },
-  {
-    id: crypto.randomUUID(),
-    day: format(addDays(today, 10), 'EEEE, MMM d'),
-    warmup: "3 rounds of: 10 jumping jacks, 10 mountain climbers",
-    wod: "AMRAP 15: 10 Thrusters, 15 Box Jumps, 20 Russian Twists",
-    notes: "Maintain good form on thrusters."
-  },
-  {
-    id: crypto.randomUUID(),
-    day: format(addDays(today, 11), 'EEEE, MMM d'),
-    warmup: "2 rounds of: 15 arm circles, 10 air squats",
-    wod: "5 Rounds: 400m Run, 15 Push-ups, 15 Goblet Squats",
-    notes: "Pace the runs consistently."
   }
 ];
