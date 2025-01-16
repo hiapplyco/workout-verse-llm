@@ -13,9 +13,9 @@ serve(async (req) => {
   }
 
   try {
-    const { warmUp, wod, notes, userPrompt, day } = await req.json();
-    console.log('Received request to regenerate workout:', { day, userPrompt });
-    console.log('Current workout details:', { warmUp, wod, notes });
+    const { currentWorkout, userPrompt, day } = await req.json();
+    console.log('Regenerating workout for:', { day, userPrompt });
+    console.log('Current workout details:', currentWorkout);
 
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
@@ -24,82 +24,44 @@ serve(async (req) => {
       You are an expert CrossFit coach modifying a workout for ${day}.
       The user wants to: ${userPrompt}
       
-      Current workout:
-      Warm-up: ${warmUp}
-      WOD (Workout of the Day): ${wod}
-      Notes: ${notes}
+      Current workout structure:
+      Warm-up: ${currentWorkout.warmUp}
+      WOD: ${currentWorkout.wod}
+      Notes: ${currentWorkout.notes}
       
-      Create a new workout that incorporates the user's request.
-      If they want a rest day, provide an active recovery workout instead.
-      
-      You must respond with a valid JSON object containing exactly these three fields:
+      Respond with a valid JSON object containing exactly these three fields:
       {
         "warmUp": "detailed warm-up plan",
         "wod": "workout of the day",
         "notes": "specific coaching notes"
       }
       
-      All three fields must be non-empty strings. Do not include any additional text or explanation outside the JSON object.
+      All fields must be non-empty strings. Only include the JSON object, no additional text.
     `;
 
     console.log('Sending prompt to Gemini');
     const result = await model.generateContent(prompt);
     const response = result.response;
     const text = response.text();
-    console.log('Raw Gemini response:', text);
     
-    // Clean and parse the response
-    const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    let modifiedWorkout;
+    // Extract and parse JSON response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Failed to parse Gemini response as JSON');
+    }
     
-    try {
-      modifiedWorkout = JSON.parse(cleanedText);
-      console.log('Successfully parsed complete response:', modifiedWorkout);
-    } catch (e) {
-      console.log('Failed to parse complete response, attempting to extract JSON');
-      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        console.error('No JSON object found in response');
-        throw new Error('Failed to parse Gemini response as JSON');
-      }
-      modifiedWorkout = JSON.parse(jsonMatch[0]);
-      console.log('Successfully parsed extracted JSON:', modifiedWorkout);
+    const modifiedWorkout = JSON.parse(jsonMatch[0]);
+    console.log('Successfully parsed response:', modifiedWorkout);
+
+    // Validate response structure
+    const { warmUp, wod, notes } = modifiedWorkout;
+    if (!warmUp?.trim() || !wod?.trim() || !notes?.trim()) {
+      throw new Error('Invalid or empty workout fields received');
     }
 
-    // Enhanced validation
-    if (!modifiedWorkout || typeof modifiedWorkout !== 'object') {
-      console.error('Invalid response structure:', modifiedWorkout);
-      throw new Error('Invalid response structure from Gemini');
-    }
-
-    const { warmUp: newWarmUp, wod: newWod, notes: newNotes } = modifiedWorkout;
-
-    // Validate each field is present and non-empty
-    if (!newWarmUp || typeof newWarmUp !== 'string' || newWarmUp.trim() === '') {
-      throw new Error('Warm-up field is missing or empty');
-    }
-    if (!newWod || typeof newWod !== 'string' || newWod.trim() === '') {
-      throw new Error('WOD field is missing or empty');
-    }
-    if (!newNotes || typeof newNotes !== 'string' || newNotes.trim() === '') {
-      throw new Error('Notes field is missing or empty');
-    }
-
-    const validatedWorkout = {
-      warmUp: newWarmUp.trim(),
-      wod: newWod.trim(),
-      notes: newNotes.trim()
-    };
-
-    console.log('Sending validated workout to frontend:', validatedWorkout);
-    
-    return new Response(JSON.stringify(validatedWorkout), {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
-      }
+    return new Response(JSON.stringify(modifiedWorkout), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
-    
   } catch (error) {
     console.error('Error in regenerate-workout function:', error);
     return new Response(JSON.stringify({ 
