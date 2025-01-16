@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import WorkoutCard from "@/components/WorkoutCard";
+import { supabase } from "@/integrations/supabase/client";
 
 const initialWorkouts = [
   {
