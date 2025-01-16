@@ -24,7 +24,7 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-6">
-        <div className="space-y-2">
+        <div className="space-y-2 rounded bg-[#F5EFE0] p-4">
           <label className="text-sm font-bold uppercase tracking-tight text-secondary">Warm-up</label>
           <Textarea
             value={workout.warmUp}
@@ -33,7 +33,7 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 rounded bg-[#F5EFE0] p-4">
           <label className="text-sm font-bold uppercase tracking-tight text-secondary">WOD</label>
           <Textarea
             value={workout.wod}
@@ -42,7 +42,7 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 rounded bg-[#F5EFE0] p-4">
           <label className="text-sm font-bold uppercase tracking-tight text-secondary">Notes</label>
           <Textarea
             value={workout.notes}
