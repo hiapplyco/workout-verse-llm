@@ -20,7 +20,7 @@ serve(async (req) => {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const prompt = `
-      You are an expert CrossFit coach creating a workout for ${day}.
+      You are an expert CrossFit coach modifying a workout for ${day}.
       The user wants to: ${userPrompt}
       
       Current workout:
@@ -28,19 +28,17 @@ serve(async (req) => {
       WOD (Workout of the Day): ${wod}
       Notes: ${notes}
       
-      If the user wants a rest day, respond with a proper active recovery workout.
+      Create a new workout that incorporates the user's request.
+      If they want a rest day, provide an active recovery workout instead.
       
-      Create a new workout that:
-      1. Has an appropriate warm-up
-      2. Changes the WOD based on the user's request
-      3. Provides specific coaching notes
-      
-      Return ONLY a JSON object with this exact format (use camelCase):
+      Return ONLY a JSON object using camelCase with this exact format:
       {
         "warmUp": "detailed warm-up plan",
         "wod": "workout of the day",
         "notes": "specific coaching notes"
       }
+      
+      Do not include any other text or explanation, just the JSON object.
     `;
 
     console.log('Sending prompt to Gemini:', prompt);
@@ -49,7 +47,6 @@ serve(async (req) => {
     const text = response.text();
     console.log('Received raw response from Gemini:', text);
     
-    // Extract JSON from the response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.error('Failed to parse Gemini response as JSON');
@@ -61,25 +58,18 @@ serve(async (req) => {
       modifiedWorkout = JSON.parse(jsonMatch[0]);
       console.log('Successfully parsed workout:', modifiedWorkout);
 
-      // Normalize the response to use camelCase
-      const formattedWorkout = {
-        warmUp: modifiedWorkout.warmUp || modifiedWorkout.warm_up,
-        wod: modifiedWorkout.wod,
-        notes: modifiedWorkout.notes
-      };
-
       // Validate all required fields are present and are strings
       if (
-        typeof formattedWorkout.warmUp !== 'string' || 
-        typeof formattedWorkout.wod !== 'string' || 
-        typeof formattedWorkout.notes !== 'string'
+        typeof modifiedWorkout.warmUp !== 'string' || 
+        typeof modifiedWorkout.wod !== 'string' || 
+        typeof modifiedWorkout.notes !== 'string'
       ) {
-        console.error('Invalid data structure received:', formattedWorkout);
+        console.error('Invalid data structure received:', modifiedWorkout);
         throw new Error('Invalid workout data structure received');
       }
 
-      console.log('Formatted workout for frontend:', formattedWorkout);
-      return new Response(JSON.stringify(formattedWorkout), {
+      console.log('Formatted workout for frontend:', modifiedWorkout);
+      return new Response(JSON.stringify(modifiedWorkout), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
 
