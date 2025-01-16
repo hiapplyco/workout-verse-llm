@@ -38,11 +38,12 @@ const Index = () => {
   const [workouts, setWorkouts] = useState(initialWorkouts);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const callGeminiForNewPlan = async (currentWorkout: typeof initialWorkouts[0]) => {
+  const callGeminiForNewPlan = async (currentWorkout: typeof initialWorkouts[0], userPrompt: string) => {
     // Placeholder for Gemini API call
+    // In a real implementation, you would use the userPrompt to generate a new workout
     return {
       ...currentWorkout,
-      wod: `${currentWorkout.wod} (Gemini Generated!)`
+      wod: `${currentWorkout.wod} (Modified based on: ${userPrompt})`
     };
   };
 
@@ -53,7 +54,7 @@ const Index = () => {
 
   const handleRegenerate = async (index: number) => {
     const newWorkouts = [...workouts];
-    const updatedWorkout = await callGeminiForNewPlan(newWorkouts[index]);
+    const updatedWorkout = await callGeminiForNewPlan(newWorkouts[index], "Make it more challenging");
     newWorkouts[index] = updatedWorkout;
     setWorkouts(newWorkouts);
   };

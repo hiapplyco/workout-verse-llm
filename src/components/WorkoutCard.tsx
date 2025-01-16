@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { RefreshCw, Volume2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { RefreshCw, Volume2, MessageSquarePlus } from "lucide-react";
+import { useState } from "react";
 
 interface WorkoutCardProps {
   workout: {
@@ -16,6 +18,15 @@ interface WorkoutCardProps {
 }
 
 const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardProps) => {
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [userPrompt, setUserPrompt] = useState("");
+
+  const handleRegenerate = () => {
+    onRegenerate();
+    setShowPrompt(false);
+    setUserPrompt("");
+  };
+
   return (
     <Card className="relative w-full animate-fade-in border-2 border-primary bg-white">
       <CardHeader className="relative border-b-2 border-primary bg-card">
@@ -51,21 +62,41 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="space-y-4">
           <Button 
-            onClick={onRegenerate} 
-            className="flex-1 border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white"
+            onClick={() => setShowPrompt(!showPrompt)} 
+            className="w-full border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white"
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Regenerate
+            <MessageSquarePlus className="mr-2 h-4 w-4" />
+            Do you want to change it up?
           </Button>
-          <Button 
-            onClick={onSpeak} 
-            className="flex-1 border-2 border-accent bg-card font-bold uppercase tracking-tight text-accent transition-colors hover:bg-accent hover:text-white"
-          >
-            <Volume2 className="mr-2 h-4 w-4" />
-            Speak
-          </Button>
+
+          {showPrompt && (
+            <div className="space-y-2">
+              <Input
+                placeholder="Describe how you'd like to modify this workout..."
+                value={userPrompt}
+                onChange={(e) => setUserPrompt(e.target.value)}
+                className="border-2 border-accent bg-card font-medium text-white"
+              />
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleRegenerate} 
+                  className="flex-1 border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Regenerate
+                </Button>
+                <Button 
+                  onClick={onSpeak} 
+                  className="flex-1 border-2 border-accent bg-card font-bold uppercase tracking-tight text-accent transition-colors hover:bg-accent hover:text-white"
+                >
+                  <Volume2 className="mr-2 h-4 w-4" />
+                  Speak
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
