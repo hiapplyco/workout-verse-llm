@@ -4,6 +4,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { RefreshCw, Volume2, MessageSquarePlus } from "lucide-react";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface WorkoutCardProps {
   workout: {
@@ -20,11 +22,40 @@ interface WorkoutCardProps {
 const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardProps) => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [userPrompt, setUserPrompt] = useState("");
+  const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
 
   const handleRegenerate = () => {
     onRegenerate();
     setShowPrompt(false);
     setUserPrompt("");
+  };
+
+  const handleSpeak = async () => {
+    setIsGeneratingVoice(true);
+    try {
+      const speechText = `
+        Today is ${workout.day}.
+        For warm up: ${workout.warmUp}.
+        Workout of the day: ${workout.wod}.
+        Important notes: ${workout.notes}.
+      `;
+
+      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        body: { text: speechText }
+      });
+
+      if (error) throw error;
+
+      if (data?.audioContent) {
+        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+        await audio.play();
+      }
+    } catch (error) {
+      console.error('Error generating speech:', error);
+      toast.error("Failed to generate speech. Please try again.");
+    } finally {
+      setIsGeneratingVoice(false);
+    }
   };
 
   return (
@@ -88,11 +119,12 @@ const WorkoutCard = ({ workout, onRegenerate, onChange, onSpeak }: WorkoutCardPr
                   Regenerate
                 </Button>
                 <Button 
-                  onClick={onSpeak} 
-                  className="flex-1 border-2 border-accent bg-card font-bold uppercase tracking-tight text-accent transition-colors hover:bg-accent hover:text-white"
+                  onClick={handleSpeak}
+                  disabled={isGeneratingVoice}
+                  className="flex-1 border-2 border-accent bg-card font-bold uppercase tracking-tight text-accent transition-colors hover:bg-accent hover:text-white disabled:opacity-50"
                 >
                   <Volume2 className="mr-2 h-4 w-4" />
-                  Speak
+                  {isGeneratingVoice ? "Generating..." : "Speak"}
                 </Button>
               </div>
             </div>
