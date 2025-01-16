@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 interface WorkoutCardProps {
   workout: {
+    id: string;  // Added id property
     day: string;
     warmUp: string;
     wod: string;
