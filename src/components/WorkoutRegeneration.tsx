@@ -1,9 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { WorkoutRegenerationForm } from "./WorkoutRegenerationForm";
+import { saveWorkoutHistory } from "./WorkoutHistoryTracker";
 
 interface WorkoutRegenerationProps {
   workout: {
@@ -65,28 +64,13 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       onChange("wod", wod);
       onChange("notes", notes);
       
-      // Store the workout update in workout_history
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        console.log('Saving workout history for user:', user.id);
-        const { error: historyError } = await supabase
-          .from('workout_history')
-          .insert({
-            workout_id: workout.id,
-            user_id: user.id,
-            prompt: userPrompt,
-            previous_wod: workout.wod,
-            new_wod: wod
-          });
-
-        if (historyError) {
-          console.error('Error saving workout history:', historyError);
-          toast.error('Failed to save workout history');
-        } else {
-          console.log('Successfully saved workout history');
-        }
-      }
+      // Save workout history
+      await saveWorkoutHistory({
+        workoutId: workout.id,
+        userPrompt,
+        previousWod: workout.wod,
+        newWod: wod,
+      });
 
       setUserPrompt("");
       toast.success(`${workout.day}'s workout updated successfully!`);
@@ -99,22 +83,12 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
   };
 
   return (
-    <div className="space-y-2">
-      <Input
-        placeholder={`How would you like to modify ${workout.day}'s workout?`}
-        value={userPrompt}
-        onChange={(e) => setUserPrompt(e.target.value)}
-        className="border-2 border-accent bg-card font-medium text-white"
-      />
-      
-      <Button 
-        onClick={handleRegenerate}
-        disabled={isRegenerating}
-        className="w-full border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
-      >
-        <RefreshCw className="mr-2 h-4 w-4" />
-        {isRegenerating ? `Updating ${workout.day}'s Workout...` : `Update ${workout.day}'s Workout`}
-      </Button>
-    </div>
+    <WorkoutRegenerationForm
+      day={workout.day}
+      userPrompt={userPrompt}
+      isRegenerating={isRegenerating}
+      onPromptChange={setUserPrompt}
+      onRegenerate={handleRegenerate}
+    />
   );
 };
