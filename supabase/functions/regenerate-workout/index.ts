@@ -31,7 +31,7 @@ serve(async (req) => {
       Create a new workout that incorporates the user's request.
       If they want a rest day, provide an active recovery workout instead.
       
-      Return ONLY a JSON object using camelCase with this exact format:
+      Return ONLY a JSON object with this exact format:
       {
         "warmUp": "detailed warm-up plan",
         "wod": "workout of the day",
@@ -39,6 +39,7 @@ serve(async (req) => {
       }
       
       Do not include any other text or explanation, just the JSON object.
+      Make sure to use camelCase for all field names.
     `;
 
     console.log('Sending prompt to Gemini:', prompt);
@@ -47,6 +48,7 @@ serve(async (req) => {
     const text = response.text();
     console.log('Received raw response from Gemini:', text);
     
+    // Extract JSON from the response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.error('Failed to parse Gemini response as JSON');
