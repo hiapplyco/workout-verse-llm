@@ -41,11 +41,11 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
         }
       };
 
-      const { error } = await supabase.from('calendar_exports').insert({
+      const { data, error } = await supabase.from('calendar_exports').insert({
         user_id: session.user.id,
         workout_id: workout.id,
         calendar_event_id: JSON.stringify(event)
-      });
+      }).select().single();
 
       if (error) throw error;
 
