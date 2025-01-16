@@ -20,7 +20,7 @@ serve(async (req) => {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const prompt = `
-      You are a professional fitness trainer. Your task is to modify this workout based on the user's request.
+      You are a professional CrossFit trainer. Your task is to completely transform this workout based on the user's request.
       
       Current workout:
       Warm-up: ${warmUp}
@@ -30,10 +30,10 @@ serve(async (req) => {
       User request: ${userPrompt}
       
       Important instructions:
-      1. You MUST modify ALL three sections (warm-up, WOD, and notes) to work together cohesively
-      2. Keep the workout style consistent across all sections
-      3. Ensure the warm-up properly prepares for the WOD
-      4. Make notes relevant to both the warm-up and WOD
+      1. Generate a COMPLETELY NEW workout that addresses the user's request
+      2. Create a warm-up that specifically prepares for the new WOD
+      3. The warm-up must include different exercises than the WOD but target similar movement patterns
+      4. Notes must provide specific guidance for both the warm-up and WOD
       5. Return ONLY a valid JSON object in this exact format:
       {
         "warmUp": "modified warm-up here",
@@ -46,11 +46,15 @@ serve(async (req) => {
       - Replace "-" with "to"
       - Use complete sentences
       - Avoid special characters
-      - Each section MUST be different from the original
-      - Maintain proper exercise progression and safety
-      - Keep the intensity level consistent across all sections
+      - NEVER copy exercises directly from the original workout
+      - Include specific rep schemes and movement standards
+      - Vary movement patterns while maintaining workout intent
       
-      Remember: Return ONLY the JSON object, no additional text.
+      Example of good transformation:
+      If original has "air squats", new version should use different leg exercises like "lunges" or "wall balls"
+      If original has "push-ups", new version should use different pushing movements like "dips" or "handstand holds"
+      
+      Remember: Return ONLY the JSON object with completely new exercises in each section.
     `;
 
     console.log('Sending prompt to Gemini:', prompt);
@@ -81,15 +85,15 @@ serve(async (req) => {
       throw new Error('Incomplete workout data received from AI');
     }
 
-    // Ensure all sections have been modified
-    if (modifiedWorkout.warmUp === warmUp || 
-        modifiedWorkout.wod === wod || 
+    // Ensure all sections have been modified with different exercises
+    if (modifiedWorkout.warmUp.includes(warmUp) || 
+        modifiedWorkout.wod.includes(wod) || 
         modifiedWorkout.notes === notes) {
-      console.error('One or more sections were not modified:', {
+      console.error('Sections not sufficiently modified:', {
         original: { warmUp, wod, notes },
         modified: modifiedWorkout
       });
-      throw new Error('Not all sections were modified. Please try again.');
+      throw new Error('Generated workout too similar to original. Please try again.');
     }
 
     return new Response(JSON.stringify(modifiedWorkout), {
