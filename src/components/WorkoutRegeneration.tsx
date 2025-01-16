@@ -51,23 +51,17 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       if (data && typeof data === 'object') {
         console.log('Updating workout with new data:', data);
         
-        // Handle both camelCase and snake_case field names
-        const warmUp = data.warmUp || data.warm_up;
-        const wod = data.wod;
-        const notes = data.notes;
+        // Ensure we have all required fields before updating
+        const { warmUp, wod, notes } = data;
+        
+        if (!warmUp || !wod || !notes) {
+          throw new Error('Missing required workout data from response');
+        }
 
-        if (warmUp) {
-          console.log('Updating warmUp from:', workout.warmUp, 'to:', warmUp);
-          onChange("warmUp", warmUp);
-        }
-        if (wod) {
-          console.log('Updating wod from:', workout.wod, 'to:', wod);
-          onChange("wod", wod);
-        }
-        if (notes) {
-          console.log('Updating notes from:', workout.notes, 'to:', notes);
-          onChange("notes", notes);
-        }
+        // Update all fields immediately
+        onChange("warmUp", warmUp);
+        onChange("wod", wod);
+        onChange("notes", notes);
         
         // Store the workout update in workout_history
         const { data: { user } } = await supabase.auth.getUser();
@@ -81,7 +75,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
               user_id: user.id,
               prompt: userPrompt,
               previous_wod: workout.wod,
-              new_wod: wod || workout.wod
+              new_wod: wod
             });
 
           if (historyError) {
