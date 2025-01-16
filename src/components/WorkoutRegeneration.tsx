@@ -26,6 +26,9 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       return;
     }
 
+    console.log('Starting workout regeneration for:', workout.day);
+    console.log('User prompt:', userPrompt);
+    
     setIsRegenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('regenerate-workout', {
@@ -38,18 +41,35 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         }
       });
 
-      if (error) throw error;
+      console.log('Received response from regenerate-workout:', data);
+
+      if (error) {
+        console.error('Error from regenerate-workout:', error);
+        throw error;
+      }
 
       if (data && typeof data === 'object') {
-        // Update each field individually to ensure state changes are triggered
-        if (data.warmUp) onChange("warmUp", data.warmUp);
-        if (data.wod) onChange("wod", data.wod);
-        if (data.notes) onChange("notes", data.notes);
+        console.log('Updating workout with new data:', data);
+        
+        // Update each field individually and log the changes
+        if (data.warmUp) {
+          console.log('Updating warmUp from:', workout.warmUp, 'to:', data.warmUp);
+          onChange("warmUp", data.warmUp);
+        }
+        if (data.wod) {
+          console.log('Updating wod from:', workout.wod, 'to:', data.wod);
+          onChange("wod", data.wod);
+        }
+        if (data.notes) {
+          console.log('Updating notes from:', workout.notes, 'to:', data.notes);
+          onChange("notes", data.notes);
+        }
         
         // Store the workout update in workout_history
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user) {
+          console.log('Saving workout history for user:', user.id);
           const { error: historyError } = await supabase
             .from('workout_history')
             .insert({
@@ -62,12 +82,15 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
           if (historyError) {
             console.error('Error saving workout history:', historyError);
+          } else {
+            console.log('Successfully saved workout history');
           }
         }
 
         setUserPrompt("");
         toast.success(`${workout.day}'s workout updated successfully!`);
       } else {
+        console.error('Invalid response format from regenerate-workout:', data);
         throw new Error('Invalid response format from regenerate-workout');
       }
     } catch (error) {
