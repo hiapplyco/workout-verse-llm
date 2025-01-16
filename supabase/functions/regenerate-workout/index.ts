@@ -20,7 +20,7 @@ serve(async (req) => {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const prompt = `
-      You are a professional fitness trainer. Your task is to modify ALL sections of this workout based on the user's request.
+      You are a professional fitness trainer. Your task is to modify this workout based on the user's request.
       
       Current workout:
       Warm-up: ${warmUp}
@@ -30,24 +30,27 @@ serve(async (req) => {
       User request: ${userPrompt}
       
       Important instructions:
-      1. You MUST modify ALL three sections (warm-up, WOD, and notes) according to the user's request
-      2. Keep similar movement patterns but adjust intensity/complexity based on the request
-      3. Return ONLY a valid JSON object in this exact format, with no additional text or explanation:
+      1. You MUST modify ALL three sections (warm-up, WOD, and notes) to work together cohesively
+      2. Keep the workout style consistent across all sections
+      3. Ensure the warm-up properly prepares for the WOD
+      4. Make notes relevant to both the warm-up and WOD
+      5. Return ONLY a valid JSON object in this exact format:
       {
         "warmUp": "modified warm-up here",
         "wod": "modified WOD here",
         "notes": "modified notes here"
       }
       
-      Format requirements for natural speech:
+      Format requirements:
       - Replace "/" with "or"
       - Replace "-" with "to"
       - Use complete sentences
       - Avoid special characters
       - Each section MUST be different from the original
+      - Maintain proper exercise progression and safety
+      - Keep the intensity level consistent across all sections
       
-      Remember: You MUST modify ALL sections while maintaining proper exercise progression and safety.
-      Do not include any text outside of the JSON object in your response.
+      Remember: Return ONLY the JSON object, no additional text.
     `;
 
     console.log('Sending prompt to Gemini:', prompt);
@@ -72,19 +75,21 @@ serve(async (req) => {
       throw new Error('Invalid JSON format in AI response');
     }
 
-    // Validate all required fields are present
+    // Validate all required fields are present and different from original
     if (!modifiedWorkout.warmUp || !modifiedWorkout.wod || !modifiedWorkout.notes) {
       console.error('Missing required fields in response:', modifiedWorkout);
       throw new Error('Incomplete workout data received from AI');
     }
 
-    // Validate that changes were actually made
-    if (modifiedWorkout.warmUp === warmUp || modifiedWorkout.wod === wod) {
-      console.error('Generated workout too similar to original:', {
-        original: { warmUp, wod },
-        modified: { warmUp: modifiedWorkout.warmUp, wod: modifiedWorkout.wod }
+    // Ensure all sections have been modified
+    if (modifiedWorkout.warmUp === warmUp || 
+        modifiedWorkout.wod === wod || 
+        modifiedWorkout.notes === notes) {
+      console.error('One or more sections were not modified:', {
+        original: { warmUp, wod, notes },
+        modified: modifiedWorkout
       });
-      throw new Error('Generated workout too similar to original. Please try again.');
+      throw new Error('Not all sections were modified. Please try again.');
     }
 
     return new Response(JSON.stringify(modifiedWorkout), {

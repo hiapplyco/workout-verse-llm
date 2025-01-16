@@ -47,15 +47,11 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       console.log('Received regenerated workout:', data);
 
       if (data && typeof data === 'object') {
-        if (data.warmUp && data.warmUp !== workout.warmUp) {
-          onChange("warmUp", data.warmUp);
-        }
-        if (data.wod && data.wod !== workout.wod) {
-          onChange("wod", data.wod);
-        }
-        if (data.notes && data.notes !== workout.notes) {
-          onChange("notes", data.notes);
-        }
+        // Update all sections at once to maintain consistency
+        onChange("warmUp", data.warmUp);
+        onChange("wod", data.wod);
+        onChange("notes", data.notes);
+        
         setUserPrompt("");
         toast.success("Workout regenerated successfully!");
       } else {
