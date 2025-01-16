@@ -28,7 +28,7 @@ serve(async (req) => {
       throw new Error('Text is required')
     }
 
-    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
+    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/CVGkPm7rQbBw8hVrkqQn', {
       method: 'POST',
       headers: {
         'Accept': 'audio/mpeg',
