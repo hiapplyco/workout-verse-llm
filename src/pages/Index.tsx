@@ -1,17 +1,39 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import WorkoutCard from "@/components/WorkoutCard";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Wand2 } from "lucide-react";
+import { Wand2, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { initialWorkouts } from "@/data/initialWorkouts";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [workouts, setWorkouts] = useState(initialWorkouts);
   const [weeklyPrompt, setWeeklyPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        navigate("/auth");
+      }
+    };
+
+    checkUser();
+  }, [navigate]);
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Error signing out");
+    } else {
+      navigate("/auth");
+    }
+  };
 
   const handleChange = (index: number, key: string, value: string) => {
     const newWorkouts = [...workouts];
@@ -74,10 +96,18 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <nav className="border-b-2 border-primary bg-card px-6 py-4">
+      <nav className="border-b-2 border-primary bg-card px-6 py-4 flex justify-between items-center">
         <h1 className="text-2xl font-black uppercase tracking-tight text-primary">
           Best App of Their Day
         </h1>
+        <Button
+          variant="outline"
+          onClick={handleSignOut}
+          className="border-2 border-primary font-medium"
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign Out
+        </Button>
       </nav>
 
       <main className="container py-8">
