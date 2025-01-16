@@ -36,13 +36,13 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-black uppercase tracking-tight text-primary">
+          <h1 className="text-4xl font-black uppercase tracking-tight text-primary">
             Best App of Their Day
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground font-medium">
             Sign in to access your workouts
           </p>
         </div>
@@ -53,7 +53,7 @@ const Auth = () => {
           </Alert>
         )}
 
-        <div className="bg-card p-6 rounded-lg border-2 border-muted">
+        <div className="bg-card p-8 rounded-none border-2 border-primary shadow-lg">
           <SupabaseAuth
             supabaseClient={supabase}
             appearance={{
@@ -61,13 +61,40 @@ const Auth = () => {
               variables: {
                 default: {
                   colors: {
-                    brand: 'rgb(var(--primary))',
-                    brandAccent: 'rgb(var(--primary))',
+                    brand: '#C4A052',
+                    brandAccent: '#A88B45',
+                    brandButtonText: '#000000',
+                    defaultButtonBackground: '#222222',
+                    defaultButtonBackgroundHover: '#333333',
+                    inputBackground: '#FFFFFF',
+                    inputBorder: '#C4A052',
+                    inputBorderHover: '#A88B45',
+                    inputBorderFocus: '#C4A052',
+                  },
+                  borderWidths: {
+                    buttonBorderWidth: '2px',
+                    inputBorderWidth: '2px',
+                  },
+                  radii: {
+                    borderRadiusButton: '0',
+                    buttonBorderRadius: '0',
+                    inputBorderRadius: '0',
+                  },
+                  fonts: {
+                    bodyFontFamily: `'Roboto Condensed', sans-serif`,
+                    buttonFontFamily: `'Roboto Condensed', sans-serif`,
+                    inputFontFamily: `'Roboto Condensed', sans-serif`,
+                    labelFontFamily: `'Roboto Condensed', sans-serif`,
                   },
                 },
               },
+              className: {
+                button: 'font-bold uppercase tracking-tight',
+                label: 'font-medium',
+                input: 'font-medium',
+              },
             }}
-            theme="light"
+            theme="default"
             providers={[]}
           />
         </div>
