@@ -2,7 +2,6 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { WorkoutRegenerationForm } from "./WorkoutRegenerationForm";
-import { saveWorkoutHistory } from "./WorkoutHistoryTracker";
 import { useMutation } from "@tanstack/react-query";
 
 interface WorkoutRegenerationProps {
@@ -27,6 +26,14 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
   const regenerateWorkoutMutation = useMutation({
     mutationFn: async (prompt: string) => {
+      // First check if user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('Authentication error:', authError);
+        throw new Error('You must be logged in to modify workouts');
+      }
+
       console.log('Starting workout regeneration for:', workout.day);
       console.log('User prompt:', prompt);
 
@@ -82,36 +89,14 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         }
 
         console.log('Updating workout with validated data:', data);
-        return { data, originalWorkout };
-      } catch (error) {
-        // Restore original values on error
-        onChange("warmUp", originalWorkout.warmUp);
-        onChange("wod", originalWorkout.wod);
-        onChange("notes", originalWorkout.notes);
-        throw error;
-      }
-    },
-    onSuccess: async ({ data, originalWorkout }) => {
-      // Update workout fields with new data
-      onChange("warmUp", data.warmUp);
-      onChange("wod", data.wod);
-      onChange("notes", data.notes);
-      
-      try {
-        // Get the current user
-        const { data: { user } } = await supabase.auth.getUser();
         
-        if (!user) {
-          throw new Error('No authenticated user found');
-        }
-
-        // Save workout history
+        // Save workout history before updating the workout
         const { error: historyError } = await supabase
           .from('workout_history')
           .insert({
             workout_id: workout.id,
             user_id: user.id,
-            prompt: userPrompt,
+            prompt: prompt,
             previous_wod: originalWorkout.wod,
             new_wod: data.wod,
           });
@@ -121,16 +106,27 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
           throw historyError;
         }
 
-        setUserPrompt("");
-        toast.success(`${workout.day}'s workout updated successfully!`);
+        return data;
       } catch (error) {
-        console.error('Error saving workout history:', error);
-        toast.error('Failed to save workout history');
+        // Restore original values on error
+        onChange("warmUp", originalWorkout.warmUp);
+        onChange("wod", originalWorkout.wod);
+        onChange("notes", originalWorkout.notes);
+        throw error;
       }
     },
-    onError: (error) => {
+    onSuccess: (data) => {
+      // Update workout fields with new data
+      onChange("warmUp", data.warmUp);
+      onChange("wod", data.wod);
+      onChange("notes", data.notes);
+      
+      setUserPrompt("");
+      toast.success(`${workout.day}'s workout updated successfully!`);
+    },
+    onError: (error: Error) => {
       console.error('Error regenerating workout:', error);
-      toast.error(`Failed to update ${workout.day}'s workout. Please try again.`);
+      toast.error(error.message || `Failed to update ${workout.day}'s workout. Please try again.`);
     }
   });
 
