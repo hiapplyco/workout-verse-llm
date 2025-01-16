@@ -51,18 +51,22 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       if (data && typeof data === 'object') {
         console.log('Updating workout with new data:', data);
         
-        // Update each field individually and log the changes
-        if (data.warmUp) {
-          console.log('Updating warmUp from:', workout.warmUp, 'to:', data.warmUp);
-          onChange("warmUp", data.warmUp);
+        // Handle both camelCase and snake_case field names
+        const warmUp = data.warmUp || data.warm_up;
+        const wod = data.wod;
+        const notes = data.notes;
+
+        if (warmUp) {
+          console.log('Updating warmUp from:', workout.warmUp, 'to:', warmUp);
+          onChange("warmUp", warmUp);
         }
-        if (data.wod) {
-          console.log('Updating wod from:', workout.wod, 'to:', data.wod);
-          onChange("wod", data.wod);
+        if (wod) {
+          console.log('Updating wod from:', workout.wod, 'to:', wod);
+          onChange("wod", wod);
         }
-        if (data.notes) {
-          console.log('Updating notes from:', workout.notes, 'to:', data.notes);
-          onChange("notes", data.notes);
+        if (notes) {
+          console.log('Updating notes from:', workout.notes, 'to:', notes);
+          onChange("notes", notes);
         }
         
         // Store the workout update in workout_history
@@ -77,7 +81,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
               user_id: user.id,
               prompt: userPrompt,
               previous_wod: workout.wod,
-              new_wod: data.wod
+              new_wod: wod || workout.wod
             });
 
           if (historyError) {
