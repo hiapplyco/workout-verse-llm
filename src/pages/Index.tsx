@@ -84,13 +84,13 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="border-b bg-card px-6 py-4">
-        <h1 className="text-2xl font-bold text-primary">Best App of Their Day</h1>
+    <div className="min-h-screen bg-card">
+      <nav className="border-b-2 border-primary bg-card px-6 py-4">
+        <h1 className="text-2xl font-black uppercase tracking-tight text-primary">Best App of Their Day</h1>
       </nav>
 
       <main className="container py-8">
-        <h2 className="mb-8 text-3xl font-bold text-primary">Weekly Workout Plan</h2>
+        <h2 className="mb-8 text-3xl font-black uppercase tracking-tight text-primary">Weekly Workout Plan</h2>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {workouts.map((workout, index) => (

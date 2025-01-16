@@ -25,30 +25,33 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#0F172A",
-          foreground: "#FFFFFF",
+          DEFAULT: "#C4A052", // Champion Gold
+          foreground: "#000000", // Power Black
         },
         secondary: {
-          DEFAULT: "#22C55E",
-          foreground: "#FFFFFF",
+          DEFAULT: "#707070", // Steel Gray
+          foreground: "#FFFFFF", // Victory White
         },
         accent: {
-          DEFAULT: "#F97316",
-          foreground: "#FFFFFF",
+          DEFAULT: "#A88B45", // Muted Gold
+          foreground: "#222222", // Shadow Black
         },
         muted: {
-          DEFAULT: "#F1F5F9",
-          foreground: "#64748B",
+          DEFAULT: "#222222", // Shadow Black
+          foreground: "#FFFFFF", // Victory White
         },
         card: {
-          DEFAULT: "#FFFFFF",
-          foreground: "#1E293B",
+          DEFAULT: "#000000", // Power Black
+          foreground: "#FFFFFF", // Victory White
         },
       },
+      fontFamily: {
+        sans: ["'Roboto Condensed'", "sans-serif"],
+      },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "0",
+        md: "0",
+        sm: "0",
       },
       keyframes: {
         "accordion-down": {
@@ -60,14 +63,14 @@ export default {
           to: { height: "0" },
         },
         "fade-in": {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
+          "0%": { opacity: "0", transform: "translateX(-42deg)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.5s ease-out",
+        "accordion-down": "accordion-down 0.2s cubic-bezier(0.87, 0, 0.13, 1)",
+        "accordion-up": "accordion-up 0.2s cubic-bezier(0.87, 0, 0.13, 1)",
+        "fade-in": "fade-in 0.15s cubic-bezier(0.87, 0, 0.13, 1)",
       },
     },
   },
