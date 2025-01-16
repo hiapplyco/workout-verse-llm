@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { initialWorkouts } from "@/data/initialWorkouts";
-import { format } from "date-fns";
 import { Navigation } from "@/components/Navigation";
 import { WeeklyPromptForm } from "@/components/WeeklyPromptForm";
 import { WorkoutList } from "@/components/WorkoutList";
 import type { Workout } from "@/types/workout";
+
+const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 const Index = () => {
   const navigate = useNavigate();
@@ -17,15 +18,10 @@ const Index = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const sortWorkouts = (workoutsToSort: Workout[]) => {
-    const today = `Today (${format(new Date(), 'MMM d')})`;
-    const tomorrow = `Tomorrow (${format(new Date(new Date().setDate(new Date().getDate() + 1)), 'MMM d')})`;
-    
     return workoutsToSort.sort((a, b) => {
-      if (a.day === today) return -1;
-      if (b.day === today) return 1;
-      if (a.day === tomorrow) return -1;
-      if (b.day === tomorrow) return 1;
-      return 0;
+      const dayA = WEEKDAYS.indexOf(a.day);
+      const dayB = WEEKDAYS.indexOf(b.day);
+      return dayA - dayB;
     });
   };
 
@@ -40,7 +36,10 @@ const Index = () => {
       const { data: existingWorkouts, error: fetchError } = await supabase
         .from('workouts')
         .select('id, day, warmup, wod, notes')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .in('day', WEEKDAYS)
+        .order('created_at', { ascending: false })
+        .limit(5);
 
       if (fetchError) {
         console.error('Error fetching workouts:', fetchError);
@@ -50,8 +49,9 @@ const Index = () => {
 
       if (!existingWorkouts?.length) {
         console.log('No existing workouts found, inserting initial workouts');
-        const workoutsToInsert = initialWorkouts.map(workout => ({
+        const workoutsToInsert = initialWorkouts.map((workout, index) => ({
           ...workout,
+          day: WEEKDAYS[index],
           user_id: user.id,
         }));
 
@@ -94,7 +94,7 @@ const Index = () => {
 
   const handleSpeakPlan = async (workout: Workout) => {
     const speechText = `
-      Today is ${workout.day}.
+      ${workout.day}.
       Warm Up: ${workout.warmup}.
       Workout Of the Day: ${workout.wod}.
       Notes: ${workout.notes}.
@@ -134,8 +134,9 @@ const Index = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
-        const workoutsToUpdate = data.map(workout => ({
+        const workoutsToUpdate = data.map((workout, index) => ({
           ...workout,
+          day: WEEKDAYS[index],
           user_id: user.id,
         }));
 
@@ -145,7 +146,7 @@ const Index = () => {
 
         if (updateError) throw updateError;
 
-        setWorkouts(data);
+        setWorkouts(sortWorkouts(data));
         setWeeklyPrompt("");
         toast.success("Weekly workout plan generated successfully!");
       } else {
