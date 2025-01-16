@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Wand2, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { initialWorkouts } from "@/data/initialWorkouts";
+import { format } from "date-fns";
 
 type Workout = {
   id: string;
@@ -18,10 +19,23 @@ type Workout = {
 
 const Index = () => {
   const navigate = useNavigate();
-  const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [weeklyPrompt, setWeeklyPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const sortWorkouts = (workoutsToSort: Workout[]) => {
+    const today = `Today (${format(new Date(), 'MMM d')})`;
+    const tomorrow = `Tomorrow (${format(new Date(new Date().setDate(new Date().getDate() + 1)), 'MMM d')})`;
+    
+    return workoutsToSort.sort((a, b) => {
+      if (a.day === today) return -1;
+      if (b.day === today) return 1;
+      if (a.day === tomorrow) return -1;
+      if (b.day === tomorrow) return 1;
+      return 0;
+    });
+  };
 
   useEffect(() => {
     const checkUser = async () => {
@@ -59,10 +73,11 @@ const Index = () => {
           return;
         }
 
+        setWorkouts(sortWorkouts(initialWorkouts));
         toast.success('Initial workouts created successfully!');
       } else {
         console.log('Existing workouts found:', existingWorkouts);
-        setWorkouts(existingWorkouts as Workout[]);
+        setWorkouts(sortWorkouts(existingWorkouts as Workout[]));
       }
     };
 
