@@ -27,8 +27,9 @@ const Index = () => {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      
+      if (authError || !session?.user) {
         navigate("/auth");
         return;
       }
@@ -36,7 +37,7 @@ const Index = () => {
       const { data: existingWorkouts, error: fetchError } = await supabase
         .from('workouts')
         .select('id, day, warmup, wod, notes')
-        .eq('user_id', user.id)
+        .eq('user_id', session.user.id)
         .in('day', WEEKDAYS)
         .order('created_at', { ascending: false })
         .limit(5);
@@ -49,10 +50,10 @@ const Index = () => {
 
       if (!existingWorkouts?.length) {
         console.log('No existing workouts found, inserting initial workouts');
-        const workoutsToInsert = initialWorkouts.map((workout, index) => ({
+        const workoutsToInsert = initialWorkouts.map(workout => ({
           ...workout,
-          day: WEEKDAYS[index],
-          user_id: user.id,
+          day: WEEKDAYS[WEEKDAYS.indexOf(workout.day)],
+          user_id: session.user.id,
         }));
 
         const { error: insertError } = await supabase
@@ -69,7 +70,7 @@ const Index = () => {
         toast.success('Initial workouts created successfully!');
       } else {
         console.log('Existing workouts found:', existingWorkouts);
-        setWorkouts(sortWorkouts(existingWorkouts as Workout[]));
+        setWorkouts(sortWorkouts(existingWorkouts));
       }
     };
 
@@ -77,6 +78,12 @@ const Index = () => {
   }, [navigate]);
 
   const handleChange = async (index: number, key: string, value: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      toast.error('You must be logged in to update workouts');
+      return;
+    }
+
     const newWorkouts = [...workouts];
     newWorkouts[index] = { ...newWorkouts[index], [key]: value };
     setWorkouts(newWorkouts);
@@ -84,7 +91,8 @@ const Index = () => {
     const { error } = await supabase
       .from('workouts')
       .update({ [key]: value })
-      .eq('id', workouts[index].id);
+      .eq('id', workouts[index].id)
+      .eq('user_id', session.user.id);
 
     if (error) {
       console.error('Error updating workout:', error);
@@ -122,6 +130,12 @@ const Index = () => {
       return;
     }
 
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      toast.error('You must be logged in to generate workouts');
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-weekly-workouts', {
@@ -131,13 +145,10 @@ const Index = () => {
       if (error) throw error;
 
       if (Array.isArray(data) && data.length === 5) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('User not authenticated');
-
         const workoutsToUpdate = data.map((workout, index) => ({
           ...workout,
           day: WEEKDAYS[index],
-          user_id: user.id,
+          user_id: session.user.id,
         }));
 
         const { error: updateError } = await supabase
