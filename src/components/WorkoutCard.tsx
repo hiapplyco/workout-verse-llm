@@ -10,7 +10,7 @@ interface WorkoutCardProps {
   workout: {
     id: string;
     day: string;
-    warmUp: string;
+    warm_up: string;
     wod: string;
     notes: string;
   };
@@ -30,7 +30,7 @@ const WorkoutCard = ({ workout, onChange }: WorkoutCardProps) => {
 
       const event = {
         'summary': `Workout for ${workout.day}`,
-        'description': `Warm Up:\n${workout.warmUp}\n\nWOD:\n${workout.wod}\n\nNotes:\n${workout.notes}`,
+        'description': `Warm Up:\n${workout.warm_up}\n\nWOD:\n${workout.wod}\n\nNotes:\n${workout.notes}`,
         'start': {
           'dateTime': new Date().toISOString(),
           'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -64,8 +64,8 @@ const WorkoutCard = ({ workout, onChange }: WorkoutCardProps) => {
       <CardContent className="space-y-4 p-6">
         <WorkoutSection
           label="Warm-up"
-          value={workout.warmUp}
-          onChange={(value) => onChange("warmUp", value)}
+          value={workout.warm_up}
+          onChange={(value) => onChange("warm_up", value)}
         />
         <WorkoutSection
           label="WOD"

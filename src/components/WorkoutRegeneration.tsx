@@ -8,7 +8,7 @@ interface WorkoutRegenerationProps {
   workout: {
     id: string;
     day: string;
-    warmUp: string;
+    warm_up: string;
     wod: string;
     notes: string;
   };
@@ -16,7 +16,7 @@ interface WorkoutRegenerationProps {
 }
 
 interface RegenerateWorkoutResponse {
-  warmUp: string;
+  warm_up: string;
   wod: string;
   notes: string;
 }
@@ -38,7 +38,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
       // Store original workout state
       const originalWorkout = {
-        warmUp: workout.warmUp,
+        warm_up: workout.warm_up,
         wod: workout.wod,
         notes: workout.notes
       };
@@ -77,7 +77,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         // Validate response structure
         const isValidWorkoutResponse = (response: any): response is RegenerateWorkoutResponse => {
           return response && 
-                 typeof response.warmUp === 'string' && 
+                 typeof response.warm_up === 'string' && 
                  typeof response.wod === 'string' && 
                  typeof response.notes === 'string';
         };
