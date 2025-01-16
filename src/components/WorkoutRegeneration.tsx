@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { WorkoutRegenerationForm } from "./WorkoutRegenerationForm";
 import { useMutation } from "@tanstack/react-query";
-import { workoutService } from "@/services/workoutService";
+import { workoutAgents } from "@/services/workoutAgents";
 import { useDebounce } from "@/hooks/useDebounce";
 
 interface WorkoutRegenerationProps {
@@ -60,14 +60,25 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
         // Set loading state by keeping original content
         setWorkoutContent(originalWorkout);
 
-        // Get regenerated workout from service
-        const data = await workoutService.regenerateWorkout(originalWorkout, prompt, workout.day);
-        console.log('Received regenerated workout:', data);
+        // Generate new content using all three agents concurrently
+        const [warmupResponse, wodResponse, notesResponse] = await Promise.all([
+          workoutAgents.generateWarmup(originalWorkout, prompt, workout.day),
+          workoutAgents.generateWOD(originalWorkout, prompt, workout.day),
+          workoutAgents.generateNotes(originalWorkout, prompt, workout.day)
+        ]);
+
+        const newWorkout = {
+          warmup: warmupResponse.content,
+          wod: wodResponse.content,
+          notes: notesResponse.content
+        };
+
+        console.log('Generated new workout content:', newWorkout);
 
         // Update workout history with new WOD
         const { error: updateHistoryError } = await supabase
           .from('workout_history')
-          .update({ newwod: data.wod })
+          .update({ newwod: newWorkout.wod })
           .eq('workout_id', workout.id)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
@@ -75,7 +86,7 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
         if (updateHistoryError) throw updateHistoryError;
 
-        return data;
+        return newWorkout;
       } catch (error) {
         // Reset workout content on error
         setWorkoutContent(null);
@@ -86,9 +97,9 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
       console.log('Updating workout fields with:', data);
       
       // Update all workout fields with new data
-      if (data.warmup) onChange("warmup", data.warmup);
-      if (data.wod) onChange("wod", data.wod);
-      if (data.notes) onChange("notes", data.notes);
+      onChange("warmup", data.warmup);
+      onChange("wod", data.wod);
+      onChange("notes", data.notes);
       
       // Clear workout content state
       setWorkoutContent(null);
