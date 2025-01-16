@@ -31,7 +31,6 @@ const Index = () => {
         return;
       }
 
-      // Fetch existing workouts for the user
       const { data: existingWorkouts, error: fetchError } = await supabase
         .from('workouts')
         .select('id, day, warmup, wod, notes')
@@ -43,7 +42,6 @@ const Index = () => {
         return;
       }
 
-      // If no workouts exist for the user, insert the initial workouts
       if (!existingWorkouts?.length) {
         console.log('No existing workouts found, inserting initial workouts');
         const workoutsToInsert = initialWorkouts.map(workout => ({
@@ -85,7 +83,6 @@ const Index = () => {
     newWorkouts[index] = { ...newWorkouts[index], [key]: value };
     setWorkouts(newWorkouts);
 
-    // Update the workout in Supabase
     const { error } = await supabase
       .from('workouts')
       .update({ [key]: value })
@@ -136,6 +133,21 @@ const Index = () => {
       if (error) throw error;
 
       if (Array.isArray(data) && data.length === 5) {
+        // Update workouts in Supabase
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const workoutsToUpdate = data.map(workout => ({
+          ...workout,
+          user_id: user.id,
+        }));
+
+        const { error: updateError } = await supabase
+          .from('workouts')
+          .upsert(workoutsToUpdate, { onConflict: 'id' });
+
+        if (updateError) throw updateError;
+
         setWorkouts(data);
         setWeeklyPrompt("");
         toast.success("Weekly workout plan generated successfully!");
