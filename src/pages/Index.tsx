@@ -5,44 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Wand2 } from "lucide-react";
 import { toast } from "sonner";
-
-const initialWorkouts = [
-  {
-    id: "monday-workout",
-    day: "Monday",
-    warmUp: "3 rounds of: 10 air squats, 10 sit-ups, 10 push-ups",
-    wod: "For Time: 21-15-9 Thrusters (95/65 lb), Pull-Ups",
-    notes: "Focus on keeping elbows high during thrusters."
-  },
-  {
-    id: "tuesday-workout",
-    day: "Tuesday",
-    warmUp: "2 rounds of: 200m run, 10 walking lunges",
-    wod: "AMRAP 12: 10 Kettlebell Swings, 10 Box Jumps, 10 Push-Ups",
-    notes: "Aim for consistent pacing."
-  },
-  {
-    id: "wednesday-workout",
-    day: "Wednesday",
-    warmUp: "3 rounds of: 10 shoulder pass-throughs, 10 PVC good mornings",
-    wod: "5 Rounds for Time: 200m Row, 15 Wall Balls, 10 Burpees",
-    notes: "Try to complete each round under 3 minutes."
-  },
-  {
-    id: "thursday-workout",
-    day: "Thursday",
-    warmUp: "2 rounds of: 10 banded pull-aparts, 5 inchworms",
-    wod: "EMOM 15: Odd minutes – 10 Deadlifts, Even minutes – Rest",
-    notes: "Focus on maintaining a neutral spine."
-  },
-  {
-    id: "friday-workout",
-    day: "Friday",
-    warmUp: "3 rounds of: 10 glute bridges, 10 scap push-ups",
-    wod: "For Time: 800m Run, 50 Box Step-ups, 800m Run, 50 KB Swings",
-    notes: "Pace your run to maintain effort for box step-ups."
-  }
-];
+import { initialWorkouts } from "@/data/initialWorkouts";
 
 const Index = () => {
   const [workouts, setWorkouts] = useState(initialWorkouts);
@@ -112,12 +75,16 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-white">
       <nav className="border-b-2 border-primary bg-card px-6 py-4">
-        <h1 className="text-2xl font-black uppercase tracking-tight text-primary">Best App of Their Day</h1>
+        <h1 className="text-2xl font-black uppercase tracking-tight text-primary">
+          Best App of Their Day
+        </h1>
       </nav>
 
       <main className="container py-8">
         <div className="mb-8 space-y-4">
-          <h2 className="text-3xl font-black uppercase tracking-tight text-primary">Weekly Workout Plan</h2>
+          <h2 className="text-3xl font-black uppercase tracking-tight text-primary">
+            Weekly Workout Plan
+          </h2>
           
           <div className="flex gap-4">
             <Input
@@ -140,7 +107,7 @@ const Index = () => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {workouts.map((workout, index) => (
             <WorkoutCard
-              key={index}
+              key={workout.id}
               workout={workout}
               onChange={(key, value) => handleChange(index, key, value)}
               onSpeak={() => handleSpeakPlan(workout)}
