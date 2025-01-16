@@ -63,9 +63,10 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
       </CardHeader>
       <CardContent className="space-y-4 p-6">
         <WorkoutSection
-          label="Warm-up"
+          label="Warmup"
           value={workout.warmup}
           onChange={(value) => onChange("warmup", value)}
+          minHeight="80px"
         />
         <WorkoutSection
           label="WOD"

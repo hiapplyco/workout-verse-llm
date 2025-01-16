@@ -59,9 +59,9 @@ export const WorkoutRegeneration = ({ workout, onChange }: WorkoutRegenerationPr
 
         // Set optimistic data (empty fields while loading)
         setOptimisticData({
-          warmup: "",
-          wod: "",
-          notes: ""
+          warmup: originalWorkout.warmup,
+          wod: originalWorkout.wod,
+          notes: originalWorkout.notes
         });
 
         // Get regenerated workout from service
