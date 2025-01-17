@@ -12,21 +12,21 @@ export const useWorkoutFetch = () => {
     setIsLoading(true);
 
     try {
-      // First verify the profile exists
-      const { data: profile, error: profileError } = await supabase
+      // First verify the profile exists with a separate query
+      const profileQuery = await supabase
         .from('profiles')
         .select('id')
         .eq('id', userId)
         .single();
 
-      if (profileError) {
-        console.error('Profile fetch failed:', profileError);
+      if (profileQuery.error) {
+        console.error('Profile fetch failed:', profileQuery.error);
         toast.error('Failed to verify user profile');
         setIsLoading(false);
         return false;
       }
 
-      if (!profile) {
+      if (!profileQuery.data) {
         console.log('No profile found for user');
         setWorkouts([]);
         setIsLoading(false);
