@@ -14,18 +14,20 @@ export const useProfile = () => {
     try {
       setIsLoading(true);
 
+      // First check if profile exists using maybeSingle() instead of single()
       const { data: existingProfile, error: selectError } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (selectError && selectError.code !== 'PGRST116') {
+      if (selectError) {
         console.error('Error checking profile:', selectError);
         toast.error('Failed to verify user profile');
         return false;
       }
 
+      // If no profile exists, create one
       if (!existingProfile) {
         const { error: insertError } = await supabase
           .from('profiles')
@@ -37,6 +39,8 @@ export const useProfile = () => {
           toast.error('Failed to create user profile');
           return false;
         }
+
+        toast.success('Profile created successfully');
       }
 
       return true;
