@@ -9,7 +9,7 @@ const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 export const useWorkoutFetch = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [hasShownWelcomeToast, setHasShownWelcomeToast] = useState(false);
-  const { ensureProfile } = useProfile();
+  const { verifyProfile } = useProfile();
 
   const sortWorkouts = (workoutsToSort: Workout[]) => {
     return workoutsToSort.sort((a, b) => {
@@ -29,7 +29,7 @@ export const useWorkoutFetch = () => {
         return;
       }
 
-      const profileExists = await ensureProfile(userId);
+      const profileExists = await verifyProfile(userId);
       if (!profileExists) {
         console.error('Failed to verify or create profile');
         return;

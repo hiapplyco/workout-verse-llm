@@ -13,12 +13,12 @@ const Auth = () => {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
-  const { ensureProfile, isLoading } = useProfile();
+  const { verifyProfile, isLoading } = useProfile();
 
   const handleAuthStateChange = useCallback(async (event: string, session: any) => {
     if (event === "SIGNED_IN" && isValidSession(session)) {
       try {
-        const profileExists = await ensureProfile(session.user.id);
+        const profileExists = await verifyProfile(session.user.id);
         if (profileExists) {
           navigate("/", { replace: true });
         }
@@ -27,14 +27,14 @@ const Auth = () => {
         setErrorMessage(getErrorMessage(error));
       }
     }
-  }, [navigate, ensureProfile]);
+  }, [navigate, verifyProfile]);
 
   const checkSession = useCallback(async () => {
     try {
       const session = await getSession();
       
       if (session?.user) {
-        const profileExists = await ensureProfile(session.user.id);
+        const profileExists = await verifyProfile(session.user.id);
         if (profileExists) {
           navigate("/");
         }
@@ -45,7 +45,7 @@ const Auth = () => {
     } finally {
       setIsInitialized(true);
     }
-  }, [navigate, ensureProfile]);
+  }, [navigate, verifyProfile]);
 
   useEffect(() => {
     let mounted = true;

@@ -49,7 +49,7 @@ Ensure all text is clear, concise, and free of markdown formatting.
 export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void) => {
   const [weeklyPrompt, setWeeklyPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const { ensureProfile } = useProfile();
+  const { verifyProfile } = useProfile();
 
   const generateWeeklyWorkouts = async () => {
     if (!weeklyPrompt.trim()) {
@@ -64,7 +64,7 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
         return;
       }
 
-      const profileExists = await ensureProfile(session.user.id);
+      const profileExists = await verifyProfile(session.user.id);
       if (!profileExists) {
         console.error('Failed to verify or create profile');
         return;
