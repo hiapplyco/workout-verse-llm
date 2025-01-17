@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export const useProfile = () => {
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   const verifyProfile = async (userId: string) => {
@@ -19,6 +18,7 @@ export const useProfile = () => {
     try {
       setIsLoading(true);
 
+      // First check if profile exists
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
         .select()
@@ -39,15 +39,12 @@ export const useProfile = () => {
         return true;
       }
 
+      // If no profile exists, create one
       const { error: insertError } = await supabase
         .from('profiles')
         .insert([{ id: userId }]);
 
       if (insertError) {
-        if (insertError.code === '23505') { // Duplicate key error
-          console.log('Profile already exists (race condition)');
-          return true;
-        }
         console.error('Error creating profile:', insertError);
         toast({
           title: "Error",
