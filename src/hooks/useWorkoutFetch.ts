@@ -8,7 +8,6 @@ const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 export const useWorkoutFetch = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [hasShownWelcomeToast, setHasShownWelcomeToast] = useState(false);
-  const [hasShownProfileErrorToast, setHasShownProfileErrorToast] = useState(false);
 
   const sortWorkouts = (workoutsToSort: Workout[]) => {
     return workoutsToSort.sort((a, b) => {
@@ -19,22 +18,31 @@ export const useWorkoutFetch = () => {
   };
 
   const ensureProfile = async (userId: string) => {
-    const { data: existingProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !existingProfile) {
-      // Profile doesn't exist, create it
-      const { error: insertError } = await supabase
+    try {
+      const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
-        .insert([{ id: userId }]);
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
 
-      if (insertError) {
-        console.error('Error creating profile:', insertError);
-        throw new Error('Failed to create user profile');
+      if (!existingProfile) {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert([{ id: userId }])
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+          throw new Error('Failed to create user profile');
+        }
+      } else if (profileError) {
+        console.error('Error checking profile:', profileError);
+        throw new Error('Failed to check user profile');
       }
+    } catch (error) {
+      console.error('Error in ensureProfile:', error);
+      throw error;
     }
   };
 

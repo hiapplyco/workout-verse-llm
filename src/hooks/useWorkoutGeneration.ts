@@ -50,24 +50,34 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
   const [isGenerating, setIsGenerating] = useState(false);
 
   const ensureProfile = async (userId: string) => {
-    const { data: existingProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !existingProfile) {
-      // Profile doesn't exist, create it
-      const { error: insertError } = await supabase
+    try {
+      const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
-        .insert([{ id: userId }]);
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
 
-      if (insertError) {
-        console.error('Error creating profile:', insertError);
-        throw new Error('Failed to create user profile');
+      if (!existingProfile) {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert([{ id: userId }])
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+          throw new Error('Failed to create user profile');
+        }
+      } else if (profileError) {
+        console.error('Error checking profile:', profileError);
+        throw new Error('Failed to check user profile');
       }
+
+      return userId;
+    } catch (error) {
+      console.error('Error in ensureProfile:', error);
+      throw error;
     }
-    return userId;
   };
 
   const generateWeeklyWorkouts = async () => {
@@ -85,7 +95,7 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
 
       // Ensure profile exists and get the profile ID
       const profileId = await ensureProfile(session.user.id);
-
+      
       setIsGenerating(true);
       
       const { data, error } = await supabase.functions.invoke('generate-weekly-workouts', {
