@@ -42,18 +42,22 @@ export const useProfile = () => {
       // Check for existing profile using .single()
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
-        .select()
+        .select('*')
         .eq('id', userId)
         .single();
 
       if (checkError) {
-        console.error('Error checking profile existence:', checkError);
-        toast({
-          title: "Error",
-          description: "Failed to verify user profile",
-          variant: "destructive",
-        });
-        return false;
+        if (checkError.code === 'PGRST116') {
+          console.log('No profile found, will create one');
+        } else {
+          console.error('Error checking profile existence:', checkError);
+          toast({
+            title: "Error",
+            description: "Failed to verify user profile",
+            variant: "destructive",
+          });
+          return false;
+        }
       }
 
       if (existingProfile) {

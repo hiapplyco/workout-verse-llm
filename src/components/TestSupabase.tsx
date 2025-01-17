@@ -39,7 +39,7 @@ export const TestSupabase = () => {
     // Test 2: Profile fetch - using .single() for unique ID
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select()
+      .select('*')
       .eq('id', session.user.id)
       .single();
 
