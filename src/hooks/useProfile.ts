@@ -39,7 +39,7 @@ export const useProfile = () => {
         email: session.user.email,
       });
 
-      // Check for existing profile with simplified query
+      // Check for existing profile with proper Supabase query
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
         .select('id')
@@ -61,12 +61,12 @@ export const useProfile = () => {
         return true;
       }
 
-      // Create new profile with explicit user ID
+      // Create new profile with proper Supabase query
       const { data: newProfile, error: insertError } = await supabase
         .from('profiles')
         .insert([{ id: userId }])
         .select('id')
-        .single();
+        .maybeSingle();
 
       if (insertError) {
         console.error('Error creating profile:', insertError);
