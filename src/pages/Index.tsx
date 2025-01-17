@@ -8,6 +8,7 @@ import { Welcome } from "@/components/Welcome";
 import { useWorkouts } from "@/hooks/useWorkouts";
 import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
+import { TestSupabase } from "@/components/TestSupabase";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -122,6 +123,7 @@ const Index = () => {
     <div className="min-h-screen bg-white">
       <Navigation />
       <main className="container py-8">
+        <TestSupabase />
         <WeeklyPromptForm
           weeklyPrompt={weeklyPrompt}
           isGenerating={isGenerating}
