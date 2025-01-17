@@ -19,7 +19,6 @@ export const useWorkoutFetch = () => {
 
   const ensureProfile = async (userId: string) => {
     try {
-      // First check if profile exists
       const { data: profile, error: selectError } = await supabase
         .from('profiles')
         .select('id')
@@ -31,7 +30,6 @@ export const useWorkoutFetch = () => {
         return;
       }
 
-      // If no profile exists, create one
       if (!profile) {
         const { error: insertError } = await supabase
           .from('profiles')
@@ -39,11 +37,13 @@ export const useWorkoutFetch = () => {
 
         if (insertError) {
           console.error('Error creating profile:', insertError);
+          toast.error('Failed to create user profile');
           return;
         }
       }
     } catch (error) {
       console.error('Error in ensureProfile:', error);
+      toast.error('Failed to verify user profile');
     }
   };
 
@@ -57,7 +57,6 @@ export const useWorkoutFetch = () => {
         return;
       }
 
-      // Ensure profile exists
       await ensureProfile(userId);
 
       const { data: existingWorkouts, error: fetchError } = await supabase

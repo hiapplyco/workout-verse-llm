@@ -51,7 +51,6 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
 
   const ensureProfile = async (userId: string): Promise<string | null> => {
     try {
-      // First check if profile exists
       const { data: profile, error: selectError } = await supabase
         .from('profiles')
         .select('id')
@@ -63,7 +62,6 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
         return null;
       }
 
-      // If no profile exists, create one
       if (!profile) {
         const { error: insertError } = await supabase
           .from('profiles')
@@ -71,6 +69,7 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
 
         if (insertError) {
           console.error('Error creating profile:', insertError);
+          toast.error('Failed to create user profile');
           return null;
         }
       }
@@ -78,6 +77,7 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
       return userId;
     } catch (error) {
       console.error('Error in ensureProfile:', error);
+      toast.error('Failed to verify user profile');
       return null;
     }
   };
@@ -95,7 +95,6 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
         return;
       }
 
-      // Ensure profile exists and get the profile ID
       const profileId = await ensureProfile(session.user.id);
       if (!profileId) {
         toast.error('Failed to create or verify user profile');
