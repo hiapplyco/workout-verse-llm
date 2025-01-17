@@ -19,18 +19,22 @@ export const useProfile = () => {
         .from('profiles')
         .select('id')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
       if (selectError) {
+        // If no profile exists (404 error), create one
         if (selectError.code === 'PGRST116') {
-          // Profile doesn't exist, create it
           const { error: insertError } = await supabase
             .from('profiles')
-            .insert([{ id: userId }])
+            .insert({ id: userId })
             .select()
             .single();
 
           if (insertError) {
+            // If insert fails with duplicate key error, profile might have been created in a race condition
+            if (insertError.code === '23505') {
+              return true;
+            }
             console.error('Error creating profile:', insertError);
             toast.error('Failed to create user profile');
             return false;
@@ -41,23 +45,6 @@ export const useProfile = () => {
 
         console.error('Error checking profile:', selectError);
         toast.error('Failed to verify user profile');
-        return false;
-      }
-
-      if (profile) {
-        return true;
-      }
-
-      // If no profile exists, create one
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert([{ id: userId }])
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Error creating profile:', insertError);
-        toast.error('Failed to create user profile');
         return false;
       }
 
