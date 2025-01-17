@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { verifySession, verifyProfile } from '@/utils/authUtils';
 import { toast } from "sonner";
 
 export const useAuth = () => {
-  const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -19,8 +17,8 @@ export const useAuth = () => {
         const currentSession = await verifySession();
         
         if (!currentSession) {
-          console.log('No session found, redirecting to auth');
-          navigate('/auth', { replace: true });
+          console.log('No session found');
+          setIsLoading(false);
           return;
         }
 
@@ -29,14 +27,12 @@ export const useAuth = () => {
           console.error('No profile found for user');
           toast.error('Profile verification failed');
           await supabase.auth.signOut();
-          navigate('/auth', { replace: true });
           return;
         }
 
         setSession(currentSession);
       } catch (error) {
         console.error('Auth initialization failed:', error);
-        navigate('/auth', { replace: true });
       } finally {
         setIsLoading(false);
       }
@@ -52,25 +48,21 @@ export const useAuth = () => {
           const profile = await verifyProfile(session.user.id);
           if (profile) {
             setSession(session);
-            navigate('/', { replace: true });
           } else {
             console.error('No profile found after sign in');
             toast.error('Profile verification failed');
             await supabase.auth.signOut();
-            navigate('/auth', { replace: true });
           }
         }
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
-        navigate('/auth', { replace: true });
       }
     });
 
-    console.log('Cleaning up auth state change listener');
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, []);
 
   return { session, isLoading };
 };

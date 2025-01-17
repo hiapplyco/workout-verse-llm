@@ -4,14 +4,16 @@ import { WorkoutList } from "@/components/WorkoutList";
 import { Welcome } from "@/components/Welcome";
 import { useWorkouts } from "@/hooks/useWorkouts";
 import { useAuth } from "@/hooks/useAuth";
+import { AuthDialog } from "@/components/auth/AuthDialog";
 import { AuthLoading } from "@/components/auth/AuthLoading";
 import { Workout } from "@/types/workout";
 import { supabase } from "@/integrations/supabase/client";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
 const Index = () => {
   const { session, isLoading: isAuthLoading } = useAuth();
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const {
     workouts,
@@ -21,6 +23,14 @@ const Index = () => {
     handleChange,
     generateWeeklyWorkouts,
   } = useWorkouts();
+
+  useEffect(() => {
+    if (!session && !isAuthLoading) {
+      setShowAuthDialog(true);
+    } else {
+      setShowAuthDialog(false);
+    }
+  }, [session, isAuthLoading]);
 
   const handleWorkoutSpeak = async (workout: Workout) => {
     try {
@@ -51,28 +61,32 @@ const Index = () => {
     return <AuthLoading />;
   }
 
-  if (!session) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-white">
       <Navigation />
       <main className="container py-8">
-        <WeeklyPromptForm
-          weeklyPrompt={weeklyPrompt}
-          isGenerating={isGenerating}
-          onPromptChange={setWeeklyPrompt}
-          onGenerate={generateWeeklyWorkouts}
+        <AuthDialog 
+          isOpen={showAuthDialog} 
+          onOpenChange={setShowAuthDialog} 
         />
-        {workouts.length === 0 ? (
-          <Welcome />
-        ) : (
-          <WorkoutList
-            workouts={workouts}
-            onWorkoutChange={handleChange}
-            onWorkoutSpeak={handleWorkoutSpeak}
-          />
+        {session && (
+          <>
+            <WeeklyPromptForm
+              weeklyPrompt={weeklyPrompt}
+              isGenerating={isGenerating}
+              onPromptChange={setWeeklyPrompt}
+              onGenerate={generateWeeklyWorkouts}
+            />
+            {workouts.length === 0 ? (
+              <Welcome />
+            ) : (
+              <WorkoutList
+                workouts={workouts}
+                onWorkoutChange={handleChange}
+                onWorkoutSpeak={handleWorkoutSpeak}
+              />
+            )}
+          </>
         )}
         <audio ref={audioRef} hidden />
       </main>
