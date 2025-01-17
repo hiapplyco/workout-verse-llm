@@ -14,7 +14,26 @@ export const useProfile = () => {
     try {
       setIsLoading(true);
 
-      // First check if profile exists using maybeSingle() instead of single()
+      // First try to create the profile - if it exists, this will fail
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert([{ id: userId }]);
+
+      // If there's no error, profile was created successfully
+      if (!insertError) {
+        toast.success('Profile created successfully');
+        return true;
+      }
+
+      // If there was an error but it's not a duplicate key error, something went wrong
+      if (insertError.code !== '23505') { // PostgreSQL unique violation error code
+        console.error('Error creating profile:', insertError);
+        toast.error('Failed to create user profile');
+        return false;
+      }
+
+      // If we got here, the profile already exists (due to duplicate key error)
+      // Let's verify we can access it
       const { data: existingProfile, error: selectError } = await supabase
         .from('profiles')
         .select('id')
@@ -22,25 +41,15 @@ export const useProfile = () => {
         .maybeSingle();
 
       if (selectError) {
-        console.error('Error checking profile:', selectError);
-        toast.error('Failed to verify user profile');
+        console.error('Error verifying existing profile:', selectError);
+        toast.error('Failed to verify existing profile');
         return false;
       }
 
-      // If no profile exists, create one
       if (!existingProfile) {
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert([{ id: userId }])
-          .select();
-
-        if (insertError) {
-          console.error('Error creating profile:', insertError);
-          toast.error('Failed to create user profile');
-          return false;
-        }
-
-        toast.success('Profile created successfully');
+        console.error('Profile not found after duplicate key error');
+        toast.error('Failed to verify user profile');
+        return false;
       }
 
       return true;
