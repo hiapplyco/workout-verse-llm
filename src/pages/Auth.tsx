@@ -29,12 +29,19 @@ const Auth = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event, session); // Debug log
         if (event === "SIGNED_IN" && session) {
-          const profileCreated = await ensureProfile(session.user.id);
-          if (profileCreated) {
-            navigate("/");
-          } else {
-            toast.error("Failed to create user profile");
+          try {
+            const profileCreated = await ensureProfile(session.user.id);
+            if (profileCreated) {
+              console.log("Profile created, navigating to /"); // Debug log
+              navigate("/", { replace: true });
+            } else {
+              toast.error("Failed to create user profile");
+            }
+          } catch (error) {
+            console.error("Error during sign in:", error);
+            toast.error("An error occurred during sign in");
           }
         }
       }
