@@ -19,19 +19,30 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    console.log('Sending prompt to Gemini...');
-    const result = await model.generateContent(weeklyPrompt);
+    // Add specific formatting instructions to the prompt
+    const formattedPrompt = `${weeklyPrompt}\n\nIMPORTANT: Return ONLY a JSON array with exactly 5 workout objects, one for each weekday. Each object MUST have these fields: day (string), warmup (string), wod (string), and notes (string). Example format:
+    [
+      {
+        "day": "Monday",
+        "warmup": "warmup details",
+        "wod": "workout details",
+        "notes": "coaching notes"
+      }
+    ]`;
+
+    console.log('Sending formatted prompt to Gemini:', formattedPrompt);
+    const result = await model.generateContent(formattedPrompt);
     const response = result.response;
     const text = response.text();
     console.log('Raw response from Gemini:', text);
 
-    // Extract JSON array using a more robust pattern
+    // Try to find JSON content in the response
     const jsonPattern = /\[\s*\{[\s\S]*?\}\s*\]/;
     const match = text.match(jsonPattern);
     
     if (!match) {
       console.error('No JSON array found in response');
-      throw new Error('Invalid response format from AI');
+      throw new Error('Could not find valid JSON array in AI response');
     }
 
     let weeklyWorkouts;
@@ -40,44 +51,56 @@ serve(async (req) => {
       console.log('Successfully parsed weekly workouts:', weeklyWorkouts);
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
-      throw new Error('Failed to parse Gemini response as JSON');
+      throw new Error(`Failed to parse JSON: ${parseError.message}`);
     }
 
-    // Validate workout format
-    if (!Array.isArray(weeklyWorkouts) || weeklyWorkouts.length !== 5) {
-      console.error('Invalid workout format:', weeklyWorkouts);
-      throw new Error('Invalid weekly workout format received from AI');
+    if (!Array.isArray(weeklyWorkouts)) {
+      console.error('Not an array:', weeklyWorkouts);
+      throw new Error('AI response is not an array');
     }
 
-    // Clean up any markdown characters from all text fields
-    weeklyWorkouts = weeklyWorkouts.map(workout => ({
-      ...workout,
-      warmup: workout.warmup?.replace(/[*_#`]/g, '').trim() || '',
-      wod: workout.wod?.replace(/[*_#`]/g, '').trim() || '',
-      notes: workout.notes?.replace(/[*_#`]/g, '').trim() || ''
-    }));
+    // Transform and validate each workout
+    weeklyWorkouts = weeklyWorkouts.map((workout, index) => {
+      const day = workout.day?.trim() || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][index];
+      const warmup = workout.warmup?.replace(/[*_#`]/g, '').trim() || 'No warmup provided';
+      const wod = workout.wod?.replace(/[*_#`]/g, '').trim() || 'No workout provided';
+      const notes = workout.notes?.replace(/[*_#`]/g, '').trim() || 'No notes provided';
 
-    // Validate required fields
-    const isValid = weeklyWorkouts.every(workout => 
-      workout.day && 
-      workout.warmup && 
-      workout.wod && 
-      typeof workout.day === 'string' &&
-      typeof workout.warmup === 'string' &&
-      typeof workout.wod === 'string'
-    );
+      return {
+        day,
+        warmup,
+        wod,
+        notes
+      };
+    });
 
-    if (!isValid) {
-      console.error('Invalid workout data structure:', weeklyWorkouts);
-      throw new Error('Invalid workout data structure received from AI');
+    // Ensure we have exactly 5 workouts
+    if (weeklyWorkouts.length < 5) {
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      while (weeklyWorkouts.length < 5) {
+        const index = weeklyWorkouts.length;
+        weeklyWorkouts.push({
+          day: days[index],
+          warmup: 'Default warmup routine',
+          wod: 'Default workout of the day',
+          notes: 'Default coaching notes'
+        });
+      }
     }
 
+    // Trim to exactly 5 workouts if we somehow got more
+    weeklyWorkouts = weeklyWorkouts.slice(0, 5);
+
+    console.log('Final processed workouts:', weeklyWorkouts);
     return new Response(JSON.stringify(weeklyWorkouts), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error in generate-weekly-workouts function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: error instanceof Error ? error.stack : 'Unknown error'
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
