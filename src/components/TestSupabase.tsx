@@ -21,12 +21,17 @@ export const TestSupabase = () => {
     console.log("Session Data:", session);
     console.log("Session Error:", sessionError);
 
+    if (sessionError) {
+      console.error("Session check failed:", sessionError);
+      return;
+    }
+
     if (session?.access_token) {
       console.log("Access Token:", session.access_token);
       setTestResults(prev => ({ ...prev, session: true }));
     }
 
-    if (!session) {
+    if (!session?.user) {
       console.error("No session found");
       return;
     }
@@ -40,6 +45,11 @@ export const TestSupabase = () => {
 
     console.log("Profile Data:", profileData);
     console.log("Profile Error:", profileError);
+
+    if (profileError) {
+      console.error("Profile fetch failed:", profileError);
+      return;
+    }
 
     if (profileData) {
       setTestResults(prev => ({ ...prev, profile: true }));
