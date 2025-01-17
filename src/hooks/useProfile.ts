@@ -15,30 +15,27 @@ export const useProfile = () => {
       setIsLoading(true);
 
       // First check if profile exists
-      const { data: profile, error: selectError } = await supabase
+      const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
-        .select('id')
+        .select()
         .eq('id', userId)
         .maybeSingle();
 
-      // If profile exists, return true
-      if (profile) {
-        return true;
-      }
-
-      // If there was an error other than no rows found, handle it
-      if (selectError && selectError.code !== 'PGRST116') {
-        console.error('Error checking profile:', selectError);
+      if (checkError) {
+        console.error('Error checking profile:', checkError);
         toast.error('Failed to verify user profile');
         return false;
+      }
+
+      // If profile exists, return true
+      if (existingProfile) {
+        return true;
       }
 
       // No profile exists, create one
       const { error: insertError } = await supabase
         .from('profiles')
-        .insert({ id: userId })
-        .select()
-        .maybeSingle();
+        .insert([{ id: userId }]);
 
       if (insertError) {
         // If insert fails with duplicate key error, profile might have been created in a race condition
