@@ -49,15 +49,13 @@ export const TestSupabase = () => {
 
       if (profileError) {
         console.error("Profile fetch failed:", profileError);
+        setTestResults(prev => ({ ...prev, profile: false }));
         return;
       }
 
       // Profile exists check
       if (profile) {
         setTestResults(prev => ({ ...prev, profile: true }));
-      } else {
-        console.log("No profile found for user");
-        setTestResults(prev => ({ ...prev, profile: false }));
       }
     } catch (error) {
       console.error("Unexpected error in Supabase test:", error);
