@@ -37,10 +37,10 @@ export const TestSupabase = () => {
         setTestResults(prev => ({ ...prev, session: true }));
       }
 
-      // Test 2: Profile check
+      // Test 2: Profile check - Fixed query
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select()
         .eq('id', session.user.id)
         .single();
 
