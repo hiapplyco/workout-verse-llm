@@ -7,32 +7,52 @@ const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 const createWeeklyPrompt = (weeklyPrompt: string) => `
 You are an expert CrossFit coach creating a comprehensive Monday-Friday workout program.
-
 User's request: ${weeklyPrompt}
 
-Create a detailed 5-day workout plan following these principles:
-1. Progressive Overload: Gradually increase intensity across the week
-2. Movement Pattern Balance: Include pushing, pulling, squatting, hinging, and core work
-3. Energy System Development: Mix cardio, strength, and skill work
-4. Recovery Consideration: Alternate body parts and intensity levels
+Create a detailed 5-day workout plan incorporating these periodization principles:
+
+1. Progressive Overload:
+   - Strategic variation of volume and intensity across the week
+   - Planned deload periods to prevent overtraining
+   - Concurrent development of strength and conditioning
+
+2. Training Variables Balance:
+   - Alternate between high-volume/low-intensity and low-volume/high-intensity days
+   - Include pushing, pulling, squatting, hinging, and core work
+   - Balance skill work, strength development, and metabolic conditioning
+
+3. Energy System Development:
+   - Structured variation between aerobic and anaerobic workouts
+   - Strategic placement of strength sessions relative to conditioning work
+   - Intentional work-to-rest ratios based on desired adaptation
+
+4. Recovery Integration:
+   - Alternate body parts and movement patterns
+   - Include active recovery elements
+   - Account for cumulative fatigue throughout the week
 
 For each day, provide:
+
 1. Warmup (10-15 minutes):
-   - Movement preparation specific to the day's workout
-   - Mobility work for key joints involved
+   - Movement preparation specific to the day's training focus
+   - Targeted mobility work for primary movement patterns
    - Progressive intensity buildup
+   - Skill practice for complex movements
 
 2. WOD (Workout of the Day):
    - Clear structure (AMRAP, For Time, EMOM, etc.)
-   - Specific rep schemes and weights
-   - Work-to-rest ratios
-   - Target time domain
+   - Specific rep schemes and weights with % of 1RM where applicable
+   - Precise work-to-rest ratios
+   - Target time domain and intended stimulus
+   - Primary and secondary movement patterns addressed
 
 3. Coaching Notes:
    - Detailed movement standards
    - Scaling options for different fitness levels
    - Strategy recommendations
    - Safety considerations
+   - Recovery guidelines
+   - Intended training effect within the weekly cycle
 
 Return a JSON array with 5 objects, one per weekday, formatted as:
 [{
@@ -41,6 +61,14 @@ Return a JSON array with 5 objects, one per weekday, formatted as:
   "wod": "workout details",
   "notes": "coaching notes"
 }]
+
+Consider these periodization factors when programming:
+- Each day's workout should have a clear primary focus while maintaining GPP
+- Include strategic deload elements to prevent overtraining
+- Account for the cumulative effect of workouts throughout the week
+- Balance the development of different physical qualities (strength, endurance, skill)
+- Incorporate targeted skill work to address common weaknesses
+- Ensure proper placement of high-intensity sessions relative to strength work
 
 Ensure all text is clear, concise, and free of markdown formatting.
 `;
