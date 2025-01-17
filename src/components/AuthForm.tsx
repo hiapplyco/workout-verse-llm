@@ -8,11 +8,6 @@ export const AuthForm = () => {
       supabaseClient={supabase}
       appearance={{
         theme: ThemeSupa,
-        style: {
-          input: {
-            WebkitTextSecurity: 'disc',
-          },
-        },
         variables: {
           default: {
             colors: {
