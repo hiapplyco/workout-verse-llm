@@ -40,7 +40,7 @@ export const TestSupabase = () => {
       // Test 2: Profile check - Using single() for unique ID query
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select()
+        .select('id')
         .eq('id', session.user.id)
         .single();
 
