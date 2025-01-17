@@ -17,6 +17,11 @@ export const AuthForm = () => {
           message: 'font-sans',
           anchor: 'font-sans font-medium'
         },
+        extend: {
+          input: {
+            autoComplete: 'on',
+          }
+        },
         variables: {
           default: {
             colors: {
@@ -44,6 +49,18 @@ export const AuthForm = () => {
         },
       }}
       providers={[]}
+      localization={{
+        variables: {
+          sign_in: {
+            email_label: 'Email',
+            password_label: 'Password',
+          },
+          sign_up: {
+            email_label: 'Email',
+            password_label: 'Password',
+          },
+        },
+      }}
     />
   );
 };
