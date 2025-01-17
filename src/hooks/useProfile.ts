@@ -9,6 +9,16 @@ export const useProfile = () => {
     try {
       setIsLoading(true);
       
+      // First verify we have a valid session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('No valid session:', sessionError);
+        toast.error('Authentication required');
+        return false;
+      }
+
+      // Check if profile exists
       const { data: profile, error: selectError } = await supabase
         .from('profiles')
         .select('id')
@@ -22,6 +32,7 @@ export const useProfile = () => {
       }
 
       if (!profile) {
+        console.log('Creating new profile for user:', userId);
         const { error: insertError } = await supabase
           .from('profiles')
           .insert({ id: userId });
@@ -31,6 +42,8 @@ export const useProfile = () => {
           toast.error('Failed to create user profile');
           return false;
         }
+        
+        console.log('Profile created successfully');
       }
 
       return true;
