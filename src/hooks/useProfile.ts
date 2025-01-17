@@ -21,23 +21,26 @@ export const useProfile = () => {
       console.log('Valid session found:', session.user.id);
 
       // Check if profile exists
-      const { data: profile, error: selectError } = await supabase
+      const { data: existingProfile, error: selectError } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
-      if (selectError) {
+      if (selectError && selectError.code !== 'PGRST116') {
         console.error('Error checking profile:', selectError);
         toast.error('Failed to verify user profile');
         return false;
       }
 
-      if (!profile) {
+      if (!existingProfile) {
         console.log('No existing profile found, creating new profile for user:', userId);
+        
         const { error: insertError } = await supabase
           .from('profiles')
-          .insert({ id: userId });
+          .insert([{ id: userId }])
+          .select()
+          .single();
 
         if (insertError) {
           console.error('Error creating profile:', insertError);
@@ -48,7 +51,7 @@ export const useProfile = () => {
         console.log('Profile created successfully');
         toast.success('Profile created successfully');
       } else {
-        console.log('Existing profile found:', profile.id);
+        console.log('Existing profile found:', existingProfile.id);
       }
 
       return true;
