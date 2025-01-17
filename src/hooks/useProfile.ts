@@ -21,10 +21,8 @@ export const useProfile = () => {
     try {
       setIsLoading(true);
       
-      // Get and verify current session with detailed logging
+      // Get and verify current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log("Session Data:", session);
-      console.log("Session Error:", sessionError);
       
       if (sessionError || !session) {
         console.error('Session error or no session:', sessionError);
@@ -34,10 +32,6 @@ export const useProfile = () => {
           variant: "destructive",
         });
         return false;
-      }
-
-      if (session?.access_token) {
-        console.log("Access Token Present:", !!session.access_token);
       }
 
       console.log('Session verified:', {
@@ -51,8 +45,6 @@ export const useProfile = () => {
         .select('id')
         .eq('id', userId)
         .maybeSingle();
-
-      console.log("Profile Check Result:", { existingProfile, checkError });
 
       if (checkError) {
         console.error('Error checking profile existence:', checkError);
@@ -74,9 +66,7 @@ export const useProfile = () => {
         .from('profiles')
         .insert([{ id: userId }])
         .select()
-        .single();
-
-      console.log("Profile Creation Result:", { newProfile, insertError });
+        .maybeSingle();
 
       if (insertError) {
         console.error('Error creating profile:', insertError);
