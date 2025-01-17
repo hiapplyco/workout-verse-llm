@@ -1,8 +1,20 @@
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 export const TestSupabase = () => {
+  const [testResults, setTestResults] = useState<{
+    session: boolean;
+    profile: boolean;
+  }>({
+    session: false,
+    profile: false,
+  });
+
   const testSupabase = async () => {
     console.log("Starting Supabase test...");
+    console.log("Supabase Client:", supabase);
 
     // Test 1: Session check
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -12,29 +24,58 @@ export const TestSupabase = () => {
 
     if (session?.access_token) {
       console.log("Access Token:", session.access_token);
+      setTestResults(prev => ({ ...prev, session: true }));
+    }
+
+    if (!session) {
+      console.error("No session found");
+      return;
     }
 
     // Test 2: Profile fetch - using .single() for unique ID
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('id')
+      .eq('id', session.user.id)
       .single();
 
     console.log("Profile Data:", profileData);
     console.log("Profile Error:", profileError);
 
+    if (profileData) {
+      setTestResults(prev => ({ ...prev, profile: true }));
+    }
+
     return { session, profile: profileData };
   };
 
+  // Run test on mount
+  useEffect(() => {
+    testSupabase();
+  }, []);
+
   return (
-    <div className="space-y-4 p-4 bg-muted rounded-lg">
-      <h2 className="text-lg font-semibold">Supabase Test Component</h2>
-      <button
+    <Card className="p-6 space-y-4">
+      <h2 className="text-xl font-semibold">Supabase Connection Test</h2>
+      
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <div className={`w-3 h-3 rounded-full ${testResults.session ? 'bg-green-500' : 'bg-red-500'}`} />
+          <span>Session: {testResults.session ? 'Active' : 'Inactive'}</span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <div className={`w-3 h-3 rounded-full ${testResults.profile ? 'bg-green-500' : 'bg-red-500'}`} />
+          <span>Profile: {testResults.profile ? 'Found' : 'Not Found'}</span>
+        </div>
+      </div>
+
+      <Button
         onClick={testSupabase}
-        className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+        variant="default"
       >
-        Test Supabase Connection
-      </button>
-    </div>
+        Run Test Again
+      </Button>
+    </Card>
   );
 };
