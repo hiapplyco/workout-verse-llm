@@ -72,16 +72,19 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
 
       if (Array.isArray(data) && data.length === 5) {
         const workoutsToUpdate = data.map((workout, index) => ({
-          ...workout,
+          id: crypto.randomUUID(),
           day: WEEKDAYS[index],
+          warmup: workout.warmup,
+          wod: workout.wod,
+          notes: workout.notes,
           user_id: session.user.id,
         }));
 
-        const { error: updateError } = await supabase
+        const { error: upsertError } = await supabase
           .from('workouts')
-          .upsert(workoutsToUpdate, { onConflict: 'id' });
+          .upsert(workoutsToUpdate);
 
-        if (updateError) throw updateError;
+        if (upsertError) throw upsertError;
 
         setWorkouts(workoutsToUpdate);
         setWeeklyPrompt("");
