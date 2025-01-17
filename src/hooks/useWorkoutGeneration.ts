@@ -147,8 +147,9 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
       // Fetch the newly inserted workouts
       const { data: insertedWorkouts, error: fetchError } = await supabase
         .from('workouts')
-        .select('*')
-        .eq('user_id', session.user.id);
+        .select()
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: true });
 
       if (fetchError) {
         console.error('Error fetching inserted workouts:', fetchError);
