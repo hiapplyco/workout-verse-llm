@@ -6,7 +6,10 @@ export const useProfile = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const verifyProfile = async (userId: string) => {
+    console.log('Starting profile verification for user:', userId);
+    
     if (!userId) {
+      console.error('Profile verification failed: No user ID provided');
       toast({
         title: "Error",
         description: "User ID is required",
@@ -17,16 +20,17 @@ export const useProfile = () => {
 
     try {
       setIsLoading(true);
+      console.log('Checking for existing profile with ID:', userId);
 
       // First check if profile exists
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
-        .select()
+        .select('id')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
       if (checkError) {
-        console.error('Error checking profile:', checkError);
+        console.error('Error checking profile existence:', checkError);
         toast({
           title: "Error",
           description: "Failed to verify user profile",
@@ -36,13 +40,18 @@ export const useProfile = () => {
       }
 
       if (existingProfile) {
+        console.log('Existing profile found:', existingProfile.id);
         return true;
       }
 
+      console.log('No existing profile found, creating new profile for user:', userId);
+
       // If no profile exists, create one
-      const { error: insertError } = await supabase
+      const { data: newProfile, error: insertError } = await supabase
         .from('profiles')
-        .insert([{ id: userId }]);
+        .insert([{ id: userId }])
+        .select()
+        .single();
 
       if (insertError) {
         console.error('Error creating profile:', insertError);
@@ -54,6 +63,7 @@ export const useProfile = () => {
         return false;
       }
 
+      console.log('New profile created successfully:', newProfile);
       toast({
         title: "Success",
         description: "Profile created successfully",
@@ -61,7 +71,7 @@ export const useProfile = () => {
       return true;
 
     } catch (error) {
-      console.error('Unexpected error:', error);
+      console.error('Unexpected error in profile verification:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",

@@ -20,21 +20,27 @@ export const useWorkoutFetch = () => {
   };
 
   const fetchWorkouts = async (userId: string) => {
+    console.log('Starting workout fetch for user:', userId);
+    
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        console.error('No valid session found');
+        console.error('No valid session found during workout fetch');
         toast.error('Please sign in to view workouts');
         return;
       }
 
+      console.log('Session verified, proceeding with profile verification');
       const profileExists = await verifyProfile(userId);
+      
       if (!profileExists) {
-        console.error('Failed to verify or create profile');
+        console.error('Profile verification failed for user:', userId);
+        toast.error('Unable to verify user profile');
         return;
       }
 
+      console.log('Profile verified, fetching workouts');
       const { data: existingWorkouts, error: fetchError } = await supabase
         .from('workouts')
         .select('*')
@@ -50,15 +56,15 @@ export const useWorkoutFetch = () => {
       }
 
       if (!existingWorkouts?.length && !hasShownWelcomeToast) {
-        console.log('No existing workouts found');
+        console.log('No existing workouts found for new user');
         toast.info('Welcome! Generate your weekly workout plan using the form above.');
         setHasShownWelcomeToast(true);
       } else if (existingWorkouts?.length) {
-        console.log('Existing workouts found:', existingWorkouts);
+        console.log('Fetched workouts successfully:', existingWorkouts.length);
         setWorkouts(sortWorkouts(existingWorkouts));
       }
     } catch (error) {
-      console.error('Error in fetchWorkouts:', error);
+      console.error('Unexpected error in fetchWorkouts:', error);
       toast.error('Failed to fetch workouts. Please try signing in again.');
     }
   };
