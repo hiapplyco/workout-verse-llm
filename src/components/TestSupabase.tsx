@@ -18,11 +18,11 @@ export const TestSupabase = () => {
       console.log("Access Token:", session.access_token);
     }
 
-    // Test 2: Profile fetch
+    // Test 2: Profile fetch - using .single() for unique ID
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('id')
-      .maybeSingle();
+      .single();
 
     console.log("Profile Data:", profileData);
     console.log("Profile Error:", profileError);

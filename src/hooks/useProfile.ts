@@ -39,12 +39,12 @@ export const useProfile = () => {
         email: session.user.email,
       });
 
-      // Check for existing profile
+      // Check for existing profile using .single() for unique ID
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
       if (checkError) {
         console.error('Error checking profile existence:', checkError);
@@ -61,12 +61,12 @@ export const useProfile = () => {
         return true;
       }
 
-      // Create new profile if none exists
+      // Create new profile if none exists, using .single() for the return
       const { data: newProfile, error: insertError } = await supabase
         .from('profiles')
         .insert([{ id: userId }])
         .select()
-        .maybeSingle();
+        .single();
 
       if (insertError) {
         console.error('Error creating profile:', insertError);
