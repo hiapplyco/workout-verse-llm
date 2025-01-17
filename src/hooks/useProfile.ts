@@ -39,12 +39,12 @@ export const useProfile = () => {
 
       console.log('Checking for existing profile with ID:', userId);
 
-      // First check if profile exists
+      // First check if profile exists using maybeSingle() instead of single()
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (checkError) {
         console.error('Error checking profile existence:', checkError);
