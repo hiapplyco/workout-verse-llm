@@ -6,26 +6,29 @@ export const useProfile = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const ensureProfile = async (userId: string): Promise<boolean> => {
+    if (!userId) {
+      console.error('No userId provided');
+      return false;
+    }
+
     try {
       setIsLoading(true);
-      console.log('Starting ensureProfile for userId:', userId);
       
       // First verify we have a valid session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError || !session) {
+      if (sessionError || !sessionData.session) {
         console.error('No valid session:', sessionError);
         toast.error('Authentication required');
         return false;
       }
-      console.log('Valid session found:', session.user.id);
 
       // Check if profile exists
       const { data: existingProfile, error: selectError } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (selectError && selectError.code !== 'PGRST116') {
         console.error('Error checking profile:', selectError);
@@ -34,13 +37,9 @@ export const useProfile = () => {
       }
 
       if (!existingProfile) {
-        console.log('No existing profile found, creating new profile for user:', userId);
-        
         const { error: insertError } = await supabase
           .from('profiles')
-          .insert([{ id: userId }])
-          .select()
-          .single();
+          .insert([{ id: userId }]);
 
         if (insertError) {
           console.error('Error creating profile:', insertError);
@@ -48,10 +47,7 @@ export const useProfile = () => {
           return false;
         }
         
-        console.log('Profile created successfully');
         toast.success('Profile created successfully');
-      } else {
-        console.log('Existing profile found:', existingProfile.id);
       }
 
       return true;

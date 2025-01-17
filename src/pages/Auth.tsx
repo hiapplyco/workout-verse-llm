@@ -1,7 +1,7 @@
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { AuthError } from "@supabase/supabase-js";
@@ -14,49 +14,49 @@ const Auth = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const { ensureProfile, isLoading } = useProfile();
 
+  const checkSession = useCallback(async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error("Session check error:", error);
+        setErrorMessage(getErrorMessage(error));
+        return;
+      }
+
+      if (session?.user) {
+        console.log("Session found, ensuring profile...");
+        const profileCreated = await ensureProfile(session.user.id);
+        if (profileCreated) {
+          navigate("/");
+        }
+      }
+    } catch (error) {
+      console.error("Session check failed:", error);
+    } finally {
+      setIsInitialized(true);
+    }
+  }, [navigate, ensureProfile]);
+
   useEffect(() => {
     let mounted = true;
-
-    // Check if we already have a session
-    const checkSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session check error:", error);
-          if (mounted) setErrorMessage(getErrorMessage(error));
-          return;
-        }
-
-        if (session?.user && mounted) {
-          console.log("Session found, ensuring profile...");
-          const profileCreated = await ensureProfile(session.user.id);
-          if (profileCreated && mounted) {
-            navigate("/");
-          }
-        }
-      } catch (error) {
-        console.error("Session check failed:", error);
-      } finally {
-        if (mounted) setIsInitialized(true);
-      }
-    };
     
-    checkSession();
+    if (mounted) {
+      checkSession();
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth state changed:", event, session);
+        if (!mounted) return;
+        
+        console.log("Auth state changed:", event);
         
         if (event === "SIGNED_IN" && session) {
           try {
             console.log("Sign in detected, ensuring profile...");
             const profileCreated = await ensureProfile(session.user.id);
             if (profileCreated && mounted) {
-              console.log("Profile ensured, navigating to /");
               navigate("/", { replace: true });
-            } else {
-              toast.error("Failed to create user profile");
             }
           } catch (error) {
             console.error("Error during sign in:", error);
@@ -70,7 +70,7 @@ const Auth = () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, ensureProfile]);
+  }, [navigate, ensureProfile, checkSession]);
 
   const getErrorMessage = (error: AuthError) => {
     switch (error.message) {
