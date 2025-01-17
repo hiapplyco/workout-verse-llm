@@ -15,6 +15,12 @@ export const WeeklyPromptForm = ({
   onPromptChange,
   onGenerate,
 }: WeeklyPromptFormProps) => {
+  const handleGenerate = (e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log('Generate button clicked');
+    onGenerate();
+  };
+
   return (
     <div className="mb-8 space-y-4">
       <h2 className="text-3xl font-black uppercase tracking-tight text-primary">
@@ -29,7 +35,7 @@ export const WeeklyPromptForm = ({
             className="border-2 border-accent bg-card font-medium text-white"
           />
           <Button
-            onClick={onGenerate}
+            onClick={handleGenerate}
             disabled={isGenerating}
             className="border-2 border-primary bg-card font-bold uppercase tracking-tight text-primary transition-colors hover:bg-primary hover:text-white disabled:opacity-50"
           >

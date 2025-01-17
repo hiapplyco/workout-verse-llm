@@ -8,11 +8,18 @@ export const Navigation = () => {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Error signing out");
-    } else {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+        toast.error("Error signing out");
+        return;
+      }
+      console.log('User signed out successfully');
       navigate("/auth");
+    } catch (error) {
+      console.error('Unexpected error during sign out:', error);
+      toast.error("Error signing out");
     }
   };
 
