@@ -19,40 +19,58 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    console.log('Sending prompt to Gemini:', weeklyPrompt);
+    console.log('Sending prompt to Gemini...');
     const result = await model.generateContent(weeklyPrompt);
     const response = result.response;
     const text = response.text();
-    console.log('Received raw response from Gemini:', text);
+    console.log('Raw response from Gemini:', text);
+
+    // Extract JSON array using a more robust pattern
+    const jsonPattern = /\[\s*\{[\s\S]*?\}\s*\]/;
+    const match = text.match(jsonPattern);
     
-    // More robust JSON extraction
-    const jsonMatch = text.match(/\[\s*{[\s\S]*}\s*\]/);
-    if (!jsonMatch) {
+    if (!match) {
       console.error('No JSON array found in response');
       throw new Error('Invalid response format from AI');
     }
-    
+
     let weeklyWorkouts;
     try {
-      weeklyWorkouts = JSON.parse(jsonMatch[0]);
+      weeklyWorkouts = JSON.parse(match[0]);
       console.log('Successfully parsed weekly workouts:', weeklyWorkouts);
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
-      throw new Error('Failed to parse AI response as JSON');
+      throw new Error('Failed to parse Gemini response as JSON');
     }
 
+    // Validate workout format
     if (!Array.isArray(weeklyWorkouts) || weeklyWorkouts.length !== 5) {
       console.error('Invalid workout format:', weeklyWorkouts);
       throw new Error('Invalid weekly workout format received from AI');
     }
 
-    // Clean up any remaining markdown characters from all text fields
+    // Clean up any markdown characters from all text fields
     weeklyWorkouts = weeklyWorkouts.map(workout => ({
       ...workout,
-      warmup: workout.warmup.replace(/[*_#\\`]/g, ''),
-      wod: workout.wod.replace(/[*_#\\`]/g, ''),
-      notes: workout.notes.replace(/[*_#\\`]/g, '')
+      warmup: workout.warmup?.replace(/[*_#`]/g, '').trim() || '',
+      wod: workout.wod?.replace(/[*_#`]/g, '').trim() || '',
+      notes: workout.notes?.replace(/[*_#`]/g, '').trim() || ''
     }));
+
+    // Validate required fields
+    const isValid = weeklyWorkouts.every(workout => 
+      workout.day && 
+      workout.warmup && 
+      workout.wod && 
+      typeof workout.day === 'string' &&
+      typeof workout.warmup === 'string' &&
+      typeof workout.wod === 'string'
+    );
+
+    if (!isValid) {
+      console.error('Invalid workout data structure:', weeklyWorkouts);
+      throw new Error('Invalid workout data structure received from AI');
+    }
 
     return new Response(JSON.stringify(weeklyWorkouts), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
