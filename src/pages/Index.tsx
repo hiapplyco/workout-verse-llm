@@ -55,7 +55,7 @@ const Index = () => {
 
       // Fetch workouts for authenticated user
       if (isMounted) {
-        await fetchWorkouts(session.user.id);
+        await fetchWorkouts(session.user.id); // Added await here
       }
     };
 
@@ -71,7 +71,7 @@ const Index = () => {
       if (isMounted) {
         if (event === 'SIGNED_IN' && session) {
           console.log('User signed in, fetching workouts');
-          await checkUserSession(); // Added await here
+          await checkUserSession();
         } else if (event === 'SIGNED_OUT' || !session) {
           console.log('User signed out or no session, redirecting to auth');
           navigate('/auth');
