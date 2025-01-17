@@ -1,20 +1,16 @@
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
 export const TestSupabase = () => {
-  const [testResult, setTestResult] = useState<string>("Not tested yet");
-
-  const runTest = async () => {
+  const testSupabase = async () => {
     console.log("Starting Supabase test...");
-    
+
     // Test 1: Session check
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
     console.log("Session Data:", session);
     console.log("Session Error:", sessionError);
-    
+
     if (session?.access_token) {
-      console.log("Access Token Present:", !!session.access_token);
       console.log("Access Token:", session.access_token);
     }
 
@@ -27,36 +23,18 @@ export const TestSupabase = () => {
     console.log("Profile Data:", profileData);
     console.log("Profile Error:", profileError);
 
-    setTestResult(
-      JSON.stringify(
-        {
-          session: session ? "Present" : "None",
-          sessionError: sessionError || "None",
-          profileData,
-          profileError: profileError || "None"
-        },
-        null,
-        2
-      )
-    );
+    return { session, profile: profileData };
   };
 
-  // Run test on mount
-  useEffect(() => {
-    runTest();
-  }, []);
-
   return (
-    <div className="p-4 space-y-4">
-      <h2 className="text-xl font-bold">Supabase Test Component</h2>
-      
-      <Button onClick={runTest}>
-        Run Test Again
-      </Button>
-      
-      <pre className="p-4 bg-gray-100 rounded-lg overflow-auto max-h-96">
-        {testResult}
-      </pre>
+    <div className="space-y-4 p-4 bg-muted rounded-lg">
+      <h2 className="text-lg font-semibold">Supabase Test Component</h2>
+      <button
+        onClick={testSupabase}
+        className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+      >
+        Test Supabase Connection
+      </button>
     </div>
   );
 };
