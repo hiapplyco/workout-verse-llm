@@ -17,11 +17,6 @@ export const AuthForm = () => {
           message: 'font-sans',
           anchor: 'font-sans font-medium'
         },
-        extend: {
-          input: {
-            autoComplete: 'on',
-          }
-        },
         variables: {
           default: {
             colors: {
@@ -60,6 +55,11 @@ export const AuthForm = () => {
             password_label: 'Password',
           },
         },
+      }}
+      supabaseAuthClientOptions={{
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
       }}
     />
   );
