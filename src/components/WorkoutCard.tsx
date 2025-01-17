@@ -49,7 +49,7 @@ const WorkoutCard = ({ workout, onChange, onSpeak }: WorkoutCardProps) => {
           calendar_event_id: JSON.stringify(event)
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
