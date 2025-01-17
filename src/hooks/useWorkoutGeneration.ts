@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Workout } from "@/types/workout";
+import { useProfile } from "./useProfile";
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -48,39 +49,7 @@ Ensure all text is clear, concise, and free of markdown formatting.
 export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void) => {
   const [weeklyPrompt, setWeeklyPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-
-  const ensureProfile = async (userId: string): Promise<string | null> => {
-    try {
-      const { data: profile, error: selectError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (selectError) {
-        console.error('Error checking profile:', selectError);
-        return null;
-      }
-
-      if (!profile) {
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({ id: userId });
-
-        if (insertError) {
-          console.error('Error creating profile:', insertError);
-          toast.error('Failed to create user profile');
-          return null;
-        }
-      }
-
-      return userId;
-    } catch (error) {
-      console.error('Error in ensureProfile:', error);
-      toast.error('Failed to verify user profile');
-      return null;
-    }
-  };
+  const { ensureProfile } = useProfile();
 
   const generateWeeklyWorkouts = async () => {
     if (!weeklyPrompt.trim()) {
@@ -95,11 +64,8 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
         return;
       }
 
-      const profileId = await ensureProfile(session.user.id);
-      if (!profileId) {
-        toast.error('Failed to create or verify user profile');
-        return;
-      }
+      const profileCreated = await ensureProfile(session.user.id);
+      if (!profileCreated) return;
       
       setIsGenerating(true);
       
@@ -116,7 +82,7 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
           warmup: workout.warmup,
           wod: workout.wod,
           notes: workout.notes,
-          user_id: profileId,
+          user_id: session.user.id,
         }));
 
         const { error: upsertError } = await supabase

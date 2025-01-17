@@ -2,12 +2,14 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Workout } from "@/types/workout";
+import { useProfile } from "./useProfile";
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 export const useWorkoutFetch = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [hasShownWelcomeToast, setHasShownWelcomeToast] = useState(false);
+  const { ensureProfile } = useProfile();
 
   const sortWorkouts = (workoutsToSort: Workout[]) => {
     return workoutsToSort.sort((a, b) => {
@@ -15,36 +17,6 @@ export const useWorkoutFetch = () => {
       const dayB = WEEKDAYS.indexOf(b.day);
       return dayA - dayB;
     });
-  };
-
-  const ensureProfile = async (userId: string) => {
-    try {
-      const { data: profile, error: selectError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (selectError) {
-        console.error('Error checking profile:', selectError);
-        return;
-      }
-
-      if (!profile) {
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({ id: userId });
-
-        if (insertError) {
-          console.error('Error creating profile:', insertError);
-          toast.error('Failed to create user profile');
-          return;
-        }
-      }
-    } catch (error) {
-      console.error('Error in ensureProfile:', error);
-      toast.error('Failed to verify user profile');
-    }
   };
 
   const fetchWorkouts = async (userId: string) => {
@@ -57,7 +29,8 @@ export const useWorkoutFetch = () => {
         return;
       }
 
-      await ensureProfile(userId);
+      const profileCreated = await ensureProfile(userId);
+      if (!profileCreated) return;
 
       const { data: existingWorkouts, error: fetchError } = await supabase
         .from('workouts')
