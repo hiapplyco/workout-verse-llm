@@ -29,8 +29,11 @@ export const useWorkoutFetch = () => {
         return;
       }
 
-      const profileCreated = await ensureProfile(userId);
-      if (!profileCreated) return;
+      const profileExists = await ensureProfile(userId);
+      if (!profileExists) {
+        console.error('Failed to verify or create profile');
+        return;
+      }
 
       const { data: existingWorkouts, error: fetchError } = await supabase
         .from('workouts')

@@ -64,8 +64,11 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
         return;
       }
 
-      const profileCreated = await ensureProfile(session.user.id);
-      if (!profileCreated) return;
+      const profileExists = await ensureProfile(session.user.id);
+      if (!profileExists) {
+        console.error('Failed to verify or create profile');
+        return;
+      }
       
       setIsGenerating(true);
       

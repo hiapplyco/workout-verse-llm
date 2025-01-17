@@ -16,8 +16,8 @@ const Auth = () => {
   const handleAuthStateChange = useCallback(async (event: string, session: any) => {
     if (event === "SIGNED_IN" && session) {
       try {
-        const profileCreated = await ensureProfile(session.user.id);
-        if (profileCreated) {
+        const profileExists = await ensureProfile(session.user.id);
+        if (profileExists) {
           navigate("/", { replace: true });
         }
       } catch (error: any) {
@@ -38,8 +38,8 @@ const Auth = () => {
       }
 
       if (session?.user) {
-        const profileCreated = await ensureProfile(session.user.id);
-        if (profileCreated) {
+        const profileExists = await ensureProfile(session.user.id);
+        if (profileExists) {
           navigate("/");
         }
       }
