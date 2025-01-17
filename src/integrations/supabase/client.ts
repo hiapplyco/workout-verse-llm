@@ -1,19 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Access the environment variables with fallback to secrets
-const getEnvVar = (key: string): string => {
-  const value = import.meta.env[key];
-  if (!value) {
-    console.error(`Missing ${key} environment variable`);
-    throw new Error(`Missing ${key} environment variable. Please ensure it is set in your Supabase secrets.`);
-  }
-  return value;
-};
-
-// Get required environment variables
-const supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
-const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
-
 // Create and export the Supabase client
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(
+  'https://ulnsvkrrdcmfiguibkpx.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsbnN2a3JyZGNtZmlndWlia3B4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDU0OTc2MDAsImV4cCI6MjAyMTA3MzYwMH0.0vVDjhy5x_OVLILXEDLgrqHqGhH2O1A4_qG4W_K7ppY'
+);
