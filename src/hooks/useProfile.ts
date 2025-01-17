@@ -1,20 +1,23 @@
-import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 export const useProfile = () => {
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const ensureProfile = async (userId: string): Promise<boolean> => {
+  const verifyProfile = async (userId: string) => {
     if (!userId) {
-      console.error('No userId provided');
+      toast({
+        title: "Error",
+        description: "User ID is required",
+        variant: "destructive",
+      });
       return false;
     }
 
     try {
       setIsLoading(true);
 
-      // First check if profile exists
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
         .select()
@@ -23,35 +26,49 @@ export const useProfile = () => {
 
       if (checkError) {
         console.error('Error checking profile:', checkError);
-        toast.error('Failed to verify user profile');
+        toast({
+          title: "Error",
+          description: "Failed to verify user profile",
+          variant: "destructive",
+        });
         return false;
       }
 
-      // If profile exists, return true
       if (existingProfile) {
         return true;
       }
 
-      // No profile exists, create one
       const { error: insertError } = await supabase
         .from('profiles')
         .insert([{ id: userId }]);
 
       if (insertError) {
-        // If insert fails with duplicate key error, profile might have been created in a race condition
-        if (insertError.code === '23505') {
+        if (insertError.code === '23505') { // Duplicate key error
+          console.log('Profile already exists (race condition)');
           return true;
         }
         console.error('Error creating profile:', insertError);
-        toast.error('Failed to create user profile');
+        toast({
+          title: "Error",
+          description: "Failed to create user profile",
+          variant: "destructive",
+        });
         return false;
       }
 
+      toast({
+        title: "Success",
+        description: "Profile created successfully",
+      });
       return true;
 
     } catch (error) {
-      console.error('Error in ensureProfile:', error);
-      toast.error('An unexpected error occurred');
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
       return false;
     } finally {
       setIsLoading(false);
@@ -59,7 +76,7 @@ export const useProfile = () => {
   };
 
   return {
-    ensureProfile,
     isLoading,
+    verifyProfile,
   };
 };
