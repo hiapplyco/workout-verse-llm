@@ -37,12 +37,12 @@ export const TestSupabase = () => {
         setTestResults(prev => ({ ...prev, session: true }));
       }
 
-      // Test 2: Profile check - Fixed query
+      // Test 2: Profile check - Using maybeSingle for safer query
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select()
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
 
       console.log("Profile Data:", profile);
       console.log("Profile Error:", profileError);
@@ -52,8 +52,12 @@ export const TestSupabase = () => {
         return;
       }
 
+      // Profile exists check
       if (profile) {
         setTestResults(prev => ({ ...prev, profile: true }));
+      } else {
+        console.log("No profile found for user");
+        setTestResults(prev => ({ ...prev, profile: false }));
       }
     } catch (error) {
       console.error("Unexpected error in Supabase test:", error);
