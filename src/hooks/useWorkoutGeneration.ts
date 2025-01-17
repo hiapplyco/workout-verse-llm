@@ -71,13 +71,22 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
       if (error) throw error;
 
       if (Array.isArray(data) && data.length === 5) {
+        // First get the user's profile ID which is referenced by workouts.user_id
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
         const workoutsToUpdate = data.map((workout, index) => ({
           id: crypto.randomUUID(),
           day: WEEKDAYS[index],
           warmup: workout.warmup,
           wod: workout.wod,
           notes: workout.notes,
-          user_id: session.user.id,
+          user_id: profileData.id, // Use the profile ID instead of session.user.id
         }));
 
         const { error: upsertError } = await supabase
