@@ -21,15 +21,14 @@ export const useProfile = () => {
     try {
       setIsLoading(true);
       
-      // Log Supabase client state
-      console.log('Supabase Client Configuration:', {
-        url: supabase.config.supabaseUrl,
-        headers: supabase.config.global?.headers,
-      });
-
       // Get and log current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('Current Session:', session);
+      console.log('Current Session:', {
+        id: session?.user?.id,
+        email: session?.user?.email,
+        aud: session?.user?.aud,
+      });
+      
       if (sessionError) {
         console.error('Session error:', sessionError);
       }
