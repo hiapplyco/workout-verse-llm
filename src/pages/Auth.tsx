@@ -3,24 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthForm } from "@/components/AuthForm";
 import { AuthHeader } from "@/components/auth/AuthHeader";
-import { verifySession } from "@/utils/authUtils";
 
 const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const session = await verifySession();
-      if (session) {
-        navigate("/", { replace: true });
-      }
-    };
-
-    checkAuth();
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "SIGNED_IN" && session) {
+      (event, session) => {
+        if (session) {
           navigate("/", { replace: true });
         }
       }
