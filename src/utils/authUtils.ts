@@ -27,38 +27,37 @@ export const verifyProfile = async (userId: string) => {
   try {
     console.log('Verifying profile for user:', userId);
     
-    const { data: profile, error: profileError } = await supabase
+    const { data: profiles, error: profileError } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', userId)
-      .single();
+      .limit(1);
 
     if (profileError) {
       console.error('Profile verification failed:', profileError);
-      
-      if (profileError.code === 'PGRST116') {
-        console.log('No profile found, attempting to create one');
-        const { data: newProfile, error: insertError } = await supabase
-          .from('profiles')
-          .insert([{ id: userId }])
-          .select('id')
-          .single();
-
-        if (insertError) {
-          console.error('Failed to create profile:', insertError);
-          toast.error('Failed to create user profile');
-          return null;
-        }
-
-        console.log('Profile created successfully:', newProfile);
-        return newProfile;
-      }
-      
       return null;
     }
 
-    console.log('Profile verified successfully:', profile);
-    return profile;
+    if (!profiles || profiles.length === 0) {
+      console.log('No profile found, attempting to create one');
+      const { data: newProfiles, error: insertError } = await supabase
+        .from('profiles')
+        .insert([{ id: userId }])
+        .select('id')
+        .limit(1);
+
+      if (insertError) {
+        console.error('Failed to create profile:', insertError);
+        toast.error('Failed to create user profile');
+        return null;
+      }
+
+      console.log('Profile created successfully:', newProfiles?.[0]);
+      return newProfiles?.[0];
+    }
+
+    console.log('Profile verified successfully:', profiles[0]);
+    return profiles[0];
   } catch (error) {
     console.error('Profile verification failed:', error);
     return null;
