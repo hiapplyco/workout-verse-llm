@@ -5,7 +5,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useProfile } from "@/hooks/useProfile";
 import { getErrorMessage } from "@/utils/authErrors";
 import { AuthForm } from "@/components/AuthForm";
-import { toast } from "sonner";
+import { AuthHeader } from "@/components/auth/AuthHeader";
+import { AuthLoading } from "@/components/auth/AuthLoading";
+import { getSession, isValidSession } from "@/utils/sessionUtils";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -14,7 +16,7 @@ const Auth = () => {
   const { ensureProfile, isLoading } = useProfile();
 
   const handleAuthStateChange = useCallback(async (event: string, session: any) => {
-    if (event === "SIGNED_IN" && session) {
+    if (event === "SIGNED_IN" && isValidSession(session)) {
       try {
         const profileExists = await ensureProfile(session.user.id);
         if (profileExists) {
@@ -29,14 +31,8 @@ const Auth = () => {
 
   const checkSession = useCallback(async () => {
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const session = await getSession();
       
-      if (error) {
-        console.error("Session check error:", error);
-        setErrorMessage(getErrorMessage(error));
-        return;
-      }
-
       if (session?.user) {
         const profileExists = await ensureProfile(session.user.id);
         if (profileExists) {
@@ -74,26 +70,13 @@ const Auth = () => {
   }, [checkSession, handleAuthStateChange]);
 
   if (!isInitialized || isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center">
-          <p className="text-muted-foreground">Setting up your account...</p>
-        </div>
-      </div>
-    );
+    return <AuthLoading />;
   }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-black uppercase tracking-tight text-primary">
-            Best App of Their Day
-          </h1>
-          <p className="text-muted-foreground font-medium">
-            Sign in to access your workouts
-          </p>
-        </div>
+        <AuthHeader />
 
         {errorMessage && (
           <Alert variant="destructive">

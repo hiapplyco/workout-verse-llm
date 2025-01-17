@@ -6,12 +6,17 @@ export const useProfile = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const ensureProfile = async (userId: string): Promise<boolean> => {
+    if (!userId) {
+      console.error('No userId provided');
+      return false;
+    }
+
     try {
       setIsLoading(true);
 
       const { data: existingProfile, error: selectError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id')
         .eq('id', userId)
         .single();
 
