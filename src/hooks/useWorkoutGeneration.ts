@@ -51,26 +51,26 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
 
   const ensureProfile = async (userId: string) => {
     try {
-      const { data: existingProfile, error: profileError } = await supabase
+      const { data: profile, error: selectError } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', userId)
         .maybeSingle();
 
-      if (!existingProfile) {
+      if (selectError) {
+        console.error('Error checking profile:', selectError);
+        throw new Error('Failed to check user profile');
+      }
+
+      if (!profile) {
         const { error: insertError } = await supabase
           .from('profiles')
-          .insert([{ id: userId }])
-          .select()
-          .single();
+          .insert([{ id: userId }]);
 
         if (insertError) {
           console.error('Error creating profile:', insertError);
           throw new Error('Failed to create user profile');
         }
-      } else if (profileError) {
-        console.error('Error checking profile:', profileError);
-        throw new Error('Failed to check user profile');
       }
 
       return userId;
