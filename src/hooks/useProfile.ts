@@ -21,25 +21,25 @@ export const useProfile = () => {
     try {
       setIsLoading(true);
       
-      // Get and log current session
+      // Get and verify current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('Current Session:', {
-        id: session?.user?.id,
-        email: session?.user?.email,
-        aud: session?.user?.aud,
+      
+      if (sessionError || !session) {
+        console.error('Session error or no session:', sessionError);
+        toast({
+          title: "Error",
+          description: "Authentication required",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      console.log('Session verified:', {
+        id: session.user.id,
+        email: session.user.email,
       });
-      
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-      }
-      
-      if (session?.access_token) {
-        console.log('Access Token Present:', session.access_token.substring(0, 10) + '...');
-      }
 
-      console.log('Checking for existing profile with ID:', userId);
-
-      // First check if profile exists using maybeSingle() instead of single()
+      // Check for existing profile with simplified query
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
         .select('id')
@@ -61,14 +61,11 @@ export const useProfile = () => {
         return true;
       }
 
-      console.log('No existing profile found, creating new profile for user:', userId);
-      console.log('Insert payload:', { id: userId });
-
-      // If no profile exists, create one
+      // Create new profile with explicit user ID
       const { data: newProfile, error: insertError } = await supabase
         .from('profiles')
         .insert([{ id: userId }])
-        .select()
+        .select('id')
         .single();
 
       if (insertError) {
