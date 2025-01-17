@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useDebounce } from "./useDebounce";
 
 export const useProfile = () => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const ensureProfile = async (userId: string): Promise<boolean> => {
+  const debouncedEnsureProfile = useDebounce(async (userId: string): Promise<boolean> => {
     if (!userId) {
       console.error('No userId provided');
       return false;
@@ -14,12 +15,10 @@ export const useProfile = () => {
     try {
       setIsLoading(true);
       
-      // First verify we have a valid session
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const { data: sessionData } = await supabase.auth.getSession();
       
-      if (sessionError || !sessionData.session) {
-        console.error('No valid session:', sessionError);
-        toast.error('Authentication required');
+      if (!sessionData.session) {
+        console.error('No valid session');
         return false;
       }
 
@@ -28,18 +27,19 @@ export const useProfile = () => {
         .from('profiles')
         .select('id')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
       if (selectError && selectError.code !== 'PGRST116') {
         console.error('Error checking profile:', selectError);
-        toast.error('Failed to verify user profile');
         return false;
       }
 
       if (!existingProfile) {
         const { error: insertError } = await supabase
           .from('profiles')
-          .insert([{ id: userId }]);
+          .insert([{ id: userId }])
+          .select()
+          .single();
 
         if (insertError) {
           console.error('Error creating profile:', insertError);
@@ -47,6 +47,7 @@ export const useProfile = () => {
           return false;
         }
         
+        console.log('Profile created successfully');
         toast.success('Profile created successfully');
       }
 
@@ -58,10 +59,10 @@ export const useProfile = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, 500);
 
   return {
     isLoading,
-    ensureProfile,
+    ensureProfile: debouncedEnsureProfile,
   };
 };
