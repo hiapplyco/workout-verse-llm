@@ -14,37 +14,41 @@ export const useProfile = () => {
     try {
       setIsLoading(true);
 
-      // First check if profile exists
-      const { data: existingProfile, error: selectError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (selectError) {
-        console.error('Error checking profile:', selectError);
-        toast.error('Failed to verify user profile');
-        return false;
-      }
-
-      // If profile exists, return true
-      if (existingProfile) {
-        return true;
-      }
-
-      // If no profile exists, create one
+      // Try to create the profile first
       const { error: insertError } = await supabase
         .from('profiles')
         .insert([{ id: userId }]);
 
-      if (insertError) {
-        console.error('Error creating profile:', insertError);
-        toast.error('Failed to create user profile');
-        return false;
+      // If insert succeeds, we're done
+      if (!insertError) {
+        toast.success('Profile created successfully');
+        return true;
       }
 
-      toast.success('Profile created successfully');
-      return true;
+      // If insert fails with duplicate key error, verify profile exists
+      if (insertError.code === '23505') {
+        const { data: profile, error: selectError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (selectError) {
+          console.error('Error verifying profile:', selectError);
+          toast.error('Failed to verify profile');
+          return false;
+        }
+
+        // Profile exists
+        if (profile) {
+          return true;
+        }
+      }
+
+      // Any other error
+      console.error('Error creating/verifying profile:', insertError);
+      toast.error('Failed to create/verify profile');
+      return false;
 
     } catch (error) {
       console.error('Error in ensureProfile:', error);
