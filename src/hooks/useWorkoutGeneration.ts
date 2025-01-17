@@ -2,7 +2,6 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Workout } from "@/types/workout";
-import { useProfile } from "./useProfile";
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -49,7 +48,6 @@ Ensure all text is clear, concise, and free of markdown formatting.
 export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void) => {
   const [weeklyPrompt, setWeeklyPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const { verifyProfile } = useProfile();
 
   const generateWeeklyWorkouts = async () => {
     if (!weeklyPrompt.trim()) {
@@ -64,12 +62,7 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
         return;
       }
 
-      const profileExists = await verifyProfile(session.user.id);
-      if (!profileExists) {
-        console.error('Failed to verify or create profile');
-        return;
-      }
-      
+      console.log('Generating workouts for user:', session.user.id);
       setIsGenerating(true);
       
       const { data, error } = await supabase.functions.invoke('generate-weekly-workouts', {
