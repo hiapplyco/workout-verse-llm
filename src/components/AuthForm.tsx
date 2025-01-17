@@ -56,11 +56,6 @@ export const AuthForm = () => {
           },
         },
       }}
-      supabaseAuthClientOptions={{
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-      }}
     />
   );
 };
