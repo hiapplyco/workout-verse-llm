@@ -84,6 +84,9 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
     }
 
     try {
+      console.log('Starting workout generation with prompt:', weeklyPrompt);
+      setIsGenerating(true);
+
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -93,12 +96,12 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
       }
 
       if (!session?.user) {
+        console.log('No user session found');
         toast.error('You must be logged in to generate workouts');
         return;
       }
 
       console.log('Generating workouts for user:', session.user.id);
-      setIsGenerating(true);
       
       const { data, error } = await supabase.functions.invoke('generate-weekly-workouts', {
         body: { weeklyPrompt: createWeeklyPrompt(weeklyPrompt) }
@@ -110,8 +113,11 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
       }
 
       if (!Array.isArray(data) || data.length !== 5) {
+        console.error('Invalid response format:', data);
         throw new Error('Invalid response format from generate-weekly-workouts');
       }
+
+      console.log('Generated workouts:', data);
 
       // Delete existing workouts for the user
       const { error: deleteError } = await supabase
@@ -156,6 +162,7 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
         throw fetchError;
       }
 
+      console.log('Successfully fetched inserted workouts:', insertedWorkouts);
       setWorkouts(insertedWorkouts);
       setWeeklyPrompt("");
       toast.success("Weekly workout plan generated successfully!");
