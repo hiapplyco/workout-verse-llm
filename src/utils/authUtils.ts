@@ -36,20 +36,33 @@ export const verifySession = async () => {
 
 export const verifyProfile = async (userId: string) => {
   try {
+    // First try to fetch the profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
       console.error('Profile verification failed:', profileError);
       return null;
     }
 
+    // If no profile exists, try to create one
     if (!profile) {
-      console.error('No profile found for user');
-      return null;
+      console.log('No profile found, attempting to create one');
+      const { data: newProfile, error: insertError } = await supabase
+        .from('profiles')
+        .insert([{ id: userId }])
+        .select('id')
+        .single();
+
+      if (insertError) {
+        console.error('Failed to create profile:', insertError);
+        return null;
+      }
+
+      return newProfile;
     }
 
     return profile;
