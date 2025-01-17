@@ -37,12 +37,12 @@ export const TestSupabase = () => {
         setTestResults(prev => ({ ...prev, session: true }));
       }
 
-      // Test 2: Profile check - Using maybeSingle for safer query
+      // Test 2: Profile check - Using single() for unique ID query
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select()
+        .select('*')
         .eq('id', session.user.id)
-        .maybeSingle();
+        .single();
 
       console.log("Profile Data:", profile);
       console.log("Profile Error:", profileError);
