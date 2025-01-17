@@ -18,6 +18,26 @@ export const useWorkoutFetch = () => {
     });
   };
 
+  const ensureProfile = async (userId: string) => {
+    const { data: existingProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !existingProfile) {
+      // Profile doesn't exist, create it
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert([{ id: userId }]);
+
+      if (insertError) {
+        console.error('Error creating profile:', insertError);
+        throw new Error('Failed to create user profile');
+      }
+    }
+  };
+
   const fetchWorkouts = async (userId: string) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -28,35 +48,13 @@ export const useWorkoutFetch = () => {
         return;
       }
 
-      // First get the user's profile ID
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        if (!hasShownProfileErrorToast) {
-          toast.error('Failed to fetch user profile');
-          setHasShownProfileErrorToast(true);
-        }
-        return;
-      }
-
-      if (!profileData) {
-        console.error('No profile found for user');
-        if (!hasShownProfileErrorToast) {
-          toast.error('Profile not found. Please try signing out and back in.');
-          setHasShownProfileErrorToast(true);
-        }
-        return;
-      }
+      // Ensure profile exists
+      await ensureProfile(userId);
 
       const { data: existingWorkouts, error: fetchError } = await supabase
         .from('workouts')
         .select('*')
-        .eq('user_id', profileData.id)
+        .eq('user_id', userId)
         .in('day', WEEKDAYS)
         .order('created_at', { ascending: false })
         .limit(5);

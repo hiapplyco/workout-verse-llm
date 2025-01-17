@@ -49,6 +49,27 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
   const [weeklyPrompt, setWeeklyPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const ensureProfile = async (userId: string) => {
+    const { data: existingProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !existingProfile) {
+      // Profile doesn't exist, create it
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert([{ id: userId }]);
+
+      if (insertError) {
+        console.error('Error creating profile:', insertError);
+        throw new Error('Failed to create user profile');
+      }
+    }
+    return userId;
+  };
+
   const generateWeeklyWorkouts = async () => {
     if (!weeklyPrompt.trim()) {
       toast.error("Please enter how you'd like to customize the weekly workouts");
@@ -62,24 +83,8 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
         return;
       }
 
-      // First get the user's profile ID
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        toast.error('Failed to fetch user profile');
-        return;
-      }
-
-      if (!profileData) {
-        console.error('No profile found for user');
-        toast.error('Profile not found. Please try signing out and back in.');
-        return;
-      }
+      // Ensure profile exists and get the profile ID
+      const profileId = await ensureProfile(session.user.id);
 
       setIsGenerating(true);
       
@@ -96,7 +101,7 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
           warmup: workout.warmup,
           wod: workout.wod,
           notes: workout.notes,
-          user_id: profileData.id,
+          user_id: profileId,
         }));
 
         const { error: upsertError } = await supabase
