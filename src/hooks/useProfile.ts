@@ -8,6 +8,7 @@ export const useProfile = () => {
   const ensureProfile = async (userId: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      console.log('Starting ensureProfile for userId:', userId);
       
       // First verify we have a valid session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -17,6 +18,7 @@ export const useProfile = () => {
         toast.error('Authentication required');
         return false;
       }
+      console.log('Valid session found:', session.user.id);
 
       // Check if profile exists
       const { data: profile, error: selectError } = await supabase
@@ -32,7 +34,7 @@ export const useProfile = () => {
       }
 
       if (!profile) {
-        console.log('Creating new profile for user:', userId);
+        console.log('No existing profile found, creating new profile for user:', userId);
         const { error: insertError } = await supabase
           .from('profiles')
           .insert({ id: userId });
@@ -44,6 +46,9 @@ export const useProfile = () => {
         }
         
         console.log('Profile created successfully');
+        toast.success('Profile created successfully');
+      } else {
+        console.log('Existing profile found:', profile.id);
       }
 
       return true;
