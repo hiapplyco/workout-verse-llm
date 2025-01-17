@@ -25,16 +25,24 @@ serve(async (req) => {
     const text = response.text();
     console.log('Received raw response from Gemini:', text);
     
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    // More robust JSON extraction
+    const jsonMatch = text.match(/\[\s*{[\s\S]*}\s*\]/);
     if (!jsonMatch) {
-      console.error('Failed to parse Gemini response as JSON');
-      throw new Error('Failed to parse Gemini response as JSON');
+      console.error('No JSON array found in response');
+      throw new Error('Invalid response format from AI');
     }
     
-    let weeklyWorkouts = JSON.parse(jsonMatch[0]);
-    console.log('Successfully parsed weekly workouts:', weeklyWorkouts);
+    let weeklyWorkouts;
+    try {
+      weeklyWorkouts = JSON.parse(jsonMatch[0]);
+      console.log('Successfully parsed weekly workouts:', weeklyWorkouts);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      throw new Error('Failed to parse AI response as JSON');
+    }
 
     if (!Array.isArray(weeklyWorkouts) || weeklyWorkouts.length !== 5) {
+      console.error('Invalid workout format:', weeklyWorkouts);
       throw new Error('Invalid weekly workout format received from AI');
     }
 
