@@ -19,6 +19,7 @@ export const useWorkoutFetch = () => {
 
   const ensureProfile = async (userId: string) => {
     try {
+      // First check if profile exists
       const { data: profile, error: selectError } = await supabase
         .from('profiles')
         .select('id')
@@ -27,22 +28,22 @@ export const useWorkoutFetch = () => {
 
       if (selectError) {
         console.error('Error checking profile:', selectError);
-        throw new Error('Failed to check user profile');
+        return;
       }
 
+      // If no profile exists, create one
       if (!profile) {
         const { error: insertError } = await supabase
           .from('profiles')
-          .insert([{ id: userId }]);
+          .insert({ id: userId });
 
         if (insertError) {
           console.error('Error creating profile:', insertError);
-          throw new Error('Failed to create user profile');
+          return;
         }
       }
     } catch (error) {
       console.error('Error in ensureProfile:', error);
-      throw error;
     }
   };
 
