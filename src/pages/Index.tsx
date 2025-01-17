@@ -23,17 +23,19 @@ const Index = () => {
   } = useWorkouts();
 
   useEffect(() => {
-    const checkUser = async () => {
+    let isMounted = true;
+
+    const checkUserSession = async () => {
       console.log('Checking user session...');
-      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       console.log('Session check result:', {
         session: session ? 'Present' : 'None',
-        error: authError || 'None'
+        error: sessionError || 'None'
       });
       
-      if (authError) {
-        console.error('Auth error:', authError);
+      if (sessionError) {
+        console.error('Auth error:', sessionError);
         toast.error('Authentication error. Please sign in again.');
         navigate("/auth");
         return;
@@ -52,33 +54,37 @@ const Index = () => {
       });
 
       // Fetch workouts for authenticated user
-      await fetchWorkouts(session.user.id);
+      if (isMounted) {
+        await fetchWorkouts(session.user.id);
+      }
     };
 
-    checkUser();
-  }, [navigate, fetchWorkouts]);
+    // Initial session check
+    checkUserSession();
 
-  // Add auth state change listener with logging
-  useEffect(() => {
+    // Set up auth state change listener
     console.log('Setting up auth state change listener...');
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', { event, userId: session?.user?.id });
       
-      if (event === 'SIGNED_OUT') {
-        console.log('User signed out, redirecting to auth');
-        navigate('/auth');
-      } else if (!session) {
-        console.log('No session found, redirecting to auth');
-        navigate('/auth');
+      if (isMounted) {
+        if (event === 'SIGNED_IN' && session) {
+          console.log('User signed in, fetching workouts');
+          checkUserSession();
+        } else if (event === 'SIGNED_OUT' || !session) {
+          console.log('User signed out or no session, redirecting to auth');
+          navigate('/auth');
+        }
       }
     });
 
     return () => {
       console.log('Cleaning up auth state change listener');
       subscription.unsubscribe();
+      isMounted = false;
     };
-  }, [navigate]);
+  }, [navigate, fetchWorkouts]);
 
   const handleSpeakPlan = async (workout: {
     day: string;
