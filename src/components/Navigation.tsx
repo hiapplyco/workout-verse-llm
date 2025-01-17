@@ -15,8 +15,12 @@ export const Navigation = () => {
         toast.error("Error signing out");
         return;
       }
+      
+      // Clear any local state if needed
       console.log('User signed out successfully');
-      navigate("/auth");
+      
+      // Force navigation to auth page after successful sign out
+      navigate("/auth", { replace: true });
     } catch (error) {
       console.error('Unexpected error during sign out:', error);
       toast.error("Error signing out");
