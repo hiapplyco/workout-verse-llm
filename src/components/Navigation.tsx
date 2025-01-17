@@ -9,6 +9,8 @@ export const Navigation = () => {
 
   const handleSignOut = async () => {
     try {
+      console.log('Starting sign out process...');
+      
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Error signing out:', error);
@@ -16,8 +18,18 @@ export const Navigation = () => {
         return;
       }
       
-      // Clear any local state if needed
-      console.log('User signed out successfully');
+      // Verify session is cleared
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session after sign out:', session);
+      
+      if (session) {
+        console.error('Session still exists after sign out');
+        toast.error("Error signing out - please try again");
+        return;
+      }
+      
+      console.log('User signed out successfully, redirecting to auth page');
+      toast.success("Signed out successfully");
       
       // Force navigation to auth page after successful sign out
       navigate("/auth", { replace: true });
