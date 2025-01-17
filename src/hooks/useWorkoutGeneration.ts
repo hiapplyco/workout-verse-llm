@@ -67,11 +67,17 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
         .from('profiles')
         .select('id')
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
         toast.error('Failed to fetch user profile');
+        return;
+      }
+
+      if (!profileData) {
+        console.error('No profile found for user');
+        toast.error('Profile not found. Please try signing out and back in.');
         return;
       }
 
