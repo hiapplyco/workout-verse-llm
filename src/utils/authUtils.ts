@@ -16,12 +16,6 @@ export const verifySession = async () => {
       return null;
     }
     
-    console.log('Session verified successfully:', {
-      id: session.user.id,
-      email: session.user.email,
-      lastSignIn: session.user.last_sign_in_at
-    });
-    
     return session;
   } catch (error) {
     console.error('Unexpected error during session verification:', error);
@@ -33,7 +27,6 @@ export const verifyProfile = async (userId: string) => {
   try {
     console.log('Verifying profile for user:', userId);
     
-    // First try to fetch the profile using single() since we expect exactly one match
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id')
@@ -41,9 +34,10 @@ export const verifyProfile = async (userId: string) => {
       .single();
 
     if (profileError) {
+      console.error('Profile verification failed:', profileError);
+      
       if (profileError.code === 'PGRST116') {
         console.log('No profile found, attempting to create one');
-        // Profile doesn't exist, try to create one
         const { data: newProfile, error: insertError } = await supabase
           .from('profiles')
           .insert([{ id: userId }])
@@ -60,7 +54,6 @@ export const verifyProfile = async (userId: string) => {
         return newProfile;
       }
       
-      console.error('Profile verification failed:', profileError);
       return null;
     }
 
@@ -76,13 +69,6 @@ export const handleSignOut = async () => {
   try {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-    
-    // Verify session is cleared
-    const session = await verifySession();
-    if (session) {
-      throw new Error('Session persisted after sign out');
-    }
-    
     toast.success('Signed out successfully');
     return true;
   } catch (error) {
