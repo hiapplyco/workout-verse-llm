@@ -25,7 +25,13 @@ const Index = () => {
 
   useEffect(() => {
     const checkUser = async () => {
+      console.log('Checking user session...');
       const { data: { session }, error: authError } = await supabase.auth.getSession();
+      
+      console.log('Session check result:', {
+        session: session ? 'Present' : 'None',
+        error: authError || 'None'
+      });
       
       if (authError) {
         console.error('Auth error:', authError);
@@ -39,6 +45,12 @@ const Index = () => {
         navigate("/auth");
         return;
       }
+
+      console.log('User authenticated:', {
+        id: session.user.id,
+        email: session.user.email,
+        lastSignIn: session.user.last_sign_in_at
+      });
 
       // Verify profile first
       const profileVerified = await verifyProfile(session.user.id);
@@ -55,17 +67,26 @@ const Index = () => {
     checkUser();
   }, [navigate, fetchWorkouts, verifyProfile]);
 
-  // Add auth state change listener
+  // Add auth state change listener with logging
   useEffect(() => {
+    console.log('Setting up auth state change listener...');
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', { event, userId: session?.user?.id });
+      
       if (event === 'SIGNED_OUT') {
+        console.log('User signed out, redirecting to auth');
         navigate('/auth');
       } else if (!session) {
+        console.log('No session found, redirecting to auth');
         navigate('/auth');
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('Cleaning up auth state change listener');
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleSpeakPlan = async (workout: {

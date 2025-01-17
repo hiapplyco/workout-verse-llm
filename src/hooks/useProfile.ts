@@ -20,6 +20,24 @@ export const useProfile = () => {
 
     try {
       setIsLoading(true);
+      
+      // Log Supabase client state
+      console.log('Supabase Client Configuration:', {
+        url: supabase.config.supabaseUrl,
+        headers: supabase.config.global?.headers,
+      });
+
+      // Get and log current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('Current Session:', session);
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+      }
+      
+      if (session?.access_token) {
+        console.log('Access Token Present:', session.access_token.substring(0, 10) + '...');
+      }
+
       console.log('Checking for existing profile with ID:', userId);
 
       // First check if profile exists
@@ -45,6 +63,7 @@ export const useProfile = () => {
       }
 
       console.log('No existing profile found, creating new profile for user:', userId);
+      console.log('Insert payload:', { id: userId });
 
       // If no profile exists, create one
       const { data: newProfile, error: insertError } = await supabase
