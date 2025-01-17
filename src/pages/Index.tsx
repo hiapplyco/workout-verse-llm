@@ -65,13 +65,13 @@ const Index = () => {
     // Set up auth state change listener
     console.log('Setting up auth state change listener...');
     
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', { event, userId: session?.user?.id });
       
       if (isMounted) {
         if (event === 'SIGNED_IN' && session) {
           console.log('User signed in, fetching workouts');
-          checkUserSession();
+          await checkUserSession(); // Added await here
         } else if (event === 'SIGNED_OUT' || !session) {
           console.log('User signed out or no session, redirecting to auth');
           navigate('/auth');
