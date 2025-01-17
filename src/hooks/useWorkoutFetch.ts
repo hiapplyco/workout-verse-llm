@@ -9,7 +9,7 @@ export const useWorkoutFetch = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [hasShownWelcomeToast, setHasShownWelcomeToast] = useState(false);
 
-  const fetchWorkouts = async (userId: string) => {
+  const fetchWorkouts = async (userId: string): Promise<boolean> => {
     console.log('Starting workout fetch for user:', userId);
     
     try {
@@ -18,13 +18,13 @@ export const useWorkoutFetch = () => {
       if (sessionError) {
         console.error('Session error:', sessionError);
         toast.error('Authentication error. Please sign in again.');
-        return;
+        return false;
       }
 
       if (!session) {
         console.error('No valid session found during workout fetch');
         toast.error('Please sign in to view workouts');
-        return;
+        return false;
       }
 
       console.log('Session verified, fetching workouts');
@@ -38,7 +38,7 @@ export const useWorkoutFetch = () => {
       if (fetchError) {
         console.error('Error fetching workouts:', fetchError);
         toast.error('Failed to fetch workouts');
-        return;
+        return false;
       }
 
       if (!existingWorkouts?.length && !hasShownWelcomeToast) {
@@ -49,9 +49,12 @@ export const useWorkoutFetch = () => {
         console.log('Fetched workouts successfully:', existingWorkouts.length);
         setWorkouts(existingWorkouts);
       }
+
+      return true;
     } catch (error) {
       console.error('Unexpected error in fetchWorkouts:', error);
       toast.error('Failed to fetch workouts. Please try signing in again.');
+      return false;
     }
   };
 
