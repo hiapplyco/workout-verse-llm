@@ -49,6 +49,30 @@ export const useProfile = () => {
       if (checkError) {
         if (checkError.code === 'PGRST116') {
           console.log('No profile found, will create one');
+          
+          // Create new profile
+          const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert([{ id: userId }])
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+            toast({
+              title: "Error",
+              description: "Failed to create user profile",
+              variant: "destructive",
+            });
+            return false;
+          }
+
+          console.log('New profile created successfully:', newProfile);
+          toast({
+            title: "Success",
+            description: "Profile created successfully",
+          });
+          return true;
         } else {
           console.error('Error checking profile existence:', checkError);
           toast({
@@ -65,29 +89,7 @@ export const useProfile = () => {
         return true;
       }
 
-      // Create new profile if none exists
-      const { data: newProfile, error: insertError } = await supabase
-        .from('profiles')
-        .insert([{ id: userId }])
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Error creating profile:', insertError);
-        toast({
-          title: "Error",
-          description: "Failed to create user profile",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      console.log('New profile created successfully:', newProfile);
-      toast({
-        title: "Success",
-        description: "Profile created successfully",
-      });
-      return true;
+      return false;
 
     } catch (error) {
       console.error('Unexpected error in profile verification:', error);

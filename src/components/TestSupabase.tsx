@@ -15,44 +15,52 @@ export const TestSupabase = () => {
   const testSupabase = async () => {
     console.log("Starting Supabase test...");
     
-    // Test 1: Session check
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    console.log("Session Data:", session);
-    console.log("Session Error:", sessionError);
+    try {
+      // Test 1: Session check
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      console.log("Session Data:", session);
+      console.log("Session Error:", sessionError);
 
-    if (sessionError) {
-      console.error("Session check failed:", sessionError);
-      return;
-    }
+      if (sessionError) {
+        console.error("Session check failed:", sessionError);
+        return;
+      }
 
-    if (!session?.user) {
-      console.error("No session found");
-      return;
-    }
+      if (!session?.user) {
+        console.error("No session found");
+        return;
+      }
 
-    if (session?.access_token) {
-      console.log("Access Token:", session.access_token);
-      setTestResults(prev => ({ ...prev, session: true }));
-    }
+      if (session?.access_token) {
+        console.log("Access Token:", session.access_token);
+        setTestResults(prev => ({ ...prev, session: true }));
+      }
 
-    // Test 2: Profile fetch - using .single() for unique ID
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', session.user.id)
-      .single();
+      // Test 2: Profile fetch - using .single() for unique ID
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
 
-    console.log("Profile Data:", profileData);
-    console.log("Profile Error:", profileError);
+      console.log("Profile Data:", profileData);
+      console.log("Profile Error:", profileError);
 
-    if (profileError) {
-      console.error("Profile fetch failed:", profileError);
-      return;
-    }
+      if (profileError) {
+        if (profileError.code === 'PGRST116') {
+          console.log("No profile found for user");
+        } else {
+          console.error("Profile fetch failed:", profileError);
+        }
+        return;
+      }
 
-    if (profileData) {
-      setTestResults(prev => ({ ...prev, profile: true }));
+      if (profileData) {
+        setTestResults(prev => ({ ...prev, profile: true }));
+      }
+    } catch (error) {
+      console.error("Unexpected error in Supabase test:", error);
     }
   };
 
