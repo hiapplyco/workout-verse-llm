@@ -113,7 +113,7 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
         throw new Error('Invalid response format from generate-weekly-workouts');
       }
 
-      // First, delete existing workouts for the user
+      // Delete existing workouts for the user
       const { error: deleteError } = await supabase
         .from('workouts')
         .delete()
@@ -147,7 +147,7 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
       // Fetch the newly inserted workouts
       const { data: insertedWorkouts, error: fetchError } = await supabase
         .from('workouts')
-        .select()
+        .select('*')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: true });
 

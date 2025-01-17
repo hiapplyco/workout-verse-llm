@@ -9,14 +9,6 @@ export const useWorkoutFetch = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [hasShownWelcomeToast, setHasShownWelcomeToast] = useState(false);
 
-  const sortWorkouts = (workoutsToSort: Workout[]) => {
-    return workoutsToSort.sort((a, b) => {
-      const dayA = WEEKDAYS.indexOf(a.day);
-      const dayB = WEEKDAYS.indexOf(b.day);
-      return dayA - dayB;
-    });
-  };
-
   const fetchWorkouts = async (userId: string) => {
     console.log('Starting workout fetch for user:', userId);
     
@@ -40,7 +32,8 @@ export const useWorkoutFetch = () => {
         .from('workouts')
         .select('*')
         .eq('user_id', userId)
-        .in('day', WEEKDAYS);
+        .in('day', WEEKDAYS)
+        .order('created_at', { ascending: true });
 
       if (fetchError) {
         console.error('Error fetching workouts:', fetchError);
@@ -54,7 +47,7 @@ export const useWorkoutFetch = () => {
         setHasShownWelcomeToast(true);
       } else if (existingWorkouts?.length) {
         console.log('Fetched workouts successfully:', existingWorkouts.length);
-        setWorkouts(sortWorkouts(existingWorkouts));
+        setWorkouts(existingWorkouts);
       }
     } catch (error) {
       console.error('Unexpected error in fetchWorkouts:', error);
@@ -65,7 +58,6 @@ export const useWorkoutFetch = () => {
   return {
     workouts,
     setWorkouts,
-    fetchWorkouts,
-    sortWorkouts,
+    fetchWorkouts
   };
 };
