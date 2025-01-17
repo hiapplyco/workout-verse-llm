@@ -12,10 +12,15 @@ export const useAuth = () => {
     console.log('Setting up auth state change listener...');
     
     const initAuth = async () => {
-      console.log('Checking user session...');
       try {
-        const currentSession = await verifySession();
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
+        if (error) {
+          console.error('Session check failed:', error);
+          setIsLoading(false);
+          return;
+        }
+
         if (!currentSession) {
           console.log('No session found');
           setIsLoading(false);
@@ -41,18 +46,16 @@ export const useAuth = () => {
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', { event, userId: session?.user?.id });
+      console.log('Auth state changed:', event, session?.user?.id);
       
-      if (event === 'SIGNED_IN') {
-        if (session?.user) {
-          const profile = await verifyProfile(session.user.id);
-          if (profile) {
-            setSession(session);
-          } else {
-            console.error('No profile found after sign in');
-            toast.error('Profile verification failed');
-            await supabase.auth.signOut();
-          }
+      if (event === 'SIGNED_IN' && session) {
+        const profile = await verifyProfile(session.user.id);
+        if (profile) {
+          setSession(session);
+        } else {
+          console.error('No profile found after sign in');
+          toast.error('Profile verification failed');
+          await supabase.auth.signOut();
         }
       } else if (event === 'SIGNED_OUT') {
         setSession(null);

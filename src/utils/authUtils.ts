@@ -40,11 +40,11 @@ export const verifyProfile = async (userId: string) => {
 
     if (!profiles || profiles.length === 0) {
       console.log('No profile found, attempting to create one');
-      const { data: newProfiles, error: insertError } = await supabase
+      const { data: newProfile, error: insertError } = await supabase
         .from('profiles')
         .insert([{ id: userId }])
-        .select('id')
-        .limit(1);
+        .select()
+        .single();
 
       if (insertError) {
         console.error('Failed to create profile:', insertError);
@@ -52,8 +52,8 @@ export const verifyProfile = async (userId: string) => {
         return null;
       }
 
-      console.log('Profile created successfully:', newProfiles?.[0]);
-      return newProfiles?.[0];
+      console.log('Profile created successfully:', newProfile);
+      return newProfile;
     }
 
     console.log('Profile verified successfully:', profiles[0]);
@@ -74,22 +74,5 @@ export const handleSignOut = async () => {
     console.error('Sign out failed:', error);
     toast.error('Failed to sign out');
     return false;
-  }
-};
-
-export const getAuthErrorMessage = (error: AuthError) => {
-  if (error.message.includes('User already registered')) {
-    return 'This email is already registered. Please sign in instead.';
-  }
-  
-  switch (error.message) {
-    case 'Invalid login credentials':
-      return 'Invalid email or password';
-    case 'Email not confirmed':
-      return 'Please verify your email address';
-    case 'missing email or phone':
-      return 'Please enter your email address';
-    default:
-      return error.message;
   }
 };
