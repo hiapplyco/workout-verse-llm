@@ -17,37 +17,6 @@ export const useWorkoutFetch = () => {
     });
   };
 
-  const verifyProfile = async (userId: string) => {
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error checking profile existence:', error);
-        return false;
-      }
-
-      if (!profile) {
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({ id: userId });
-
-        if (insertError) {
-          console.error('Error creating profile:', insertError);
-          return false;
-        }
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error in profile verification:', error);
-      return false;
-    }
-  };
-
   const fetchWorkouts = async (userId: string) => {
     console.log('Starting workout fetch for user:', userId);
     
@@ -60,16 +29,7 @@ export const useWorkoutFetch = () => {
         return;
       }
 
-      console.log('Session verified, proceeding with profile verification');
-      const profileExists = await verifyProfile(userId);
-      
-      if (!profileExists) {
-        console.error('Profile verification failed for user:', userId);
-        toast.error('Unable to verify user profile');
-        return;
-      }
-
-      console.log('Profile verified, fetching workouts');
+      console.log('Session verified, fetching workouts');
       const { data: existingWorkouts, error: fetchError } = await supabase
         .from('workouts')
         .select('*')

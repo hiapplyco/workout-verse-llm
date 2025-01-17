@@ -6,10 +6,13 @@ import { WeeklyPromptForm } from "@/components/WeeklyPromptForm";
 import { WorkoutList } from "@/components/WorkoutList";
 import { Welcome } from "@/components/Welcome";
 import { useWorkouts } from "@/hooks/useWorkouts";
+import { useProfile } from "@/hooks/useProfile";
+import { toast } from "sonner";
 
 const Index = () => {
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const { verifyProfile } = useProfile();
   const {
     workouts,
     weeklyPrompt,
@@ -24,16 +27,46 @@ const Index = () => {
     const checkUser = async () => {
       const { data: { session }, error: authError } = await supabase.auth.getSession();
       
-      if (authError || !session?.user) {
+      if (authError) {
+        console.error('Auth error:', authError);
+        toast.error('Authentication error. Please sign in again.');
         navigate("/auth");
         return;
       }
 
+      if (!session?.user) {
+        console.log('No session found, redirecting to auth');
+        navigate("/auth");
+        return;
+      }
+
+      // Verify profile first
+      const profileVerified = await verifyProfile(session.user.id);
+      if (!profileVerified) {
+        console.error('Profile verification failed');
+        toast.error('Error setting up user profile');
+        return;
+      }
+
+      // Only fetch workouts if profile is verified
       await fetchWorkouts(session.user.id);
     };
 
     checkUser();
-  }, [navigate, fetchWorkouts]);
+  }, [navigate, fetchWorkouts, verifyProfile]);
+
+  // Add auth state change listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        navigate('/auth');
+      } else if (!session) {
+        navigate('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const handleSpeakPlan = async (workout: {
     day: string;
