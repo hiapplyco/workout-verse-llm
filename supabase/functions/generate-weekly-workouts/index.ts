@@ -16,8 +16,17 @@ serve(async (req) => {
     const { weeklyPrompt } = await req.json();
     console.log('Received weekly prompt:', weeklyPrompt);
 
-    const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
+    const geminiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!geminiKey) {
+      console.error('GEMINI_API_KEY not found in environment variables');
+      throw new Error('GEMINI_API_KEY not configured');
+    }
+
+    const genAI = new GoogleGenerativeAI(geminiKey);
+    console.log('Initialized Gemini API client');
+    
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    console.log('Got Gemini model instance');
 
     // Add specific formatting instructions to the prompt
     const formattedPrompt = `${weeklyPrompt}\n\nIMPORTANT: Return ONLY a JSON array with exactly 5 workout objects, one for each weekday. Each object MUST have these fields: day (string), warmup (string), wod (string), and notes (string). Example format:
