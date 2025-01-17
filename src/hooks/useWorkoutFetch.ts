@@ -8,6 +8,7 @@ const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 export const useWorkoutFetch = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [hasShownWelcomeToast, setHasShownWelcomeToast] = useState(false);
+  const [hasShownProfileErrorToast, setHasShownProfileErrorToast] = useState(false);
 
   const sortWorkouts = (workoutsToSort: Workout[]) => {
     return workoutsToSort.sort((a, b) => {
@@ -36,13 +37,19 @@ export const useWorkoutFetch = () => {
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
-        toast.error('Failed to fetch user profile');
+        if (!hasShownProfileErrorToast) {
+          toast.error('Failed to fetch user profile');
+          setHasShownProfileErrorToast(true);
+        }
         return;
       }
 
       if (!profileData) {
         console.error('No profile found for user');
-        toast.error('Profile not found. Please try signing out and back in.');
+        if (!hasShownProfileErrorToast) {
+          toast.error('Profile not found. Please try signing out and back in.');
+          setHasShownProfileErrorToast(true);
+        }
         return;
       }
 
