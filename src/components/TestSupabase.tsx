@@ -14,21 +14,20 @@ export const TestSupabase = () => {
 
   const testSupabase = async () => {
     console.log("Starting Supabase test...");
+    setTestResults({ session: false, profile: false });
     
     try {
       // Test 1: Session check
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       console.log("Session Data:", session);
-      console.log("Session Error:", sessionError);
-
       if (sessionError) {
         console.error("Session check failed:", sessionError);
         return;
       }
 
       if (!session?.user) {
-        console.error("No session found");
+        console.log("No session found");
         return;
       }
 
@@ -45,18 +44,14 @@ export const TestSupabase = () => {
         .single();
 
       console.log("Profile Data:", profile);
-      console.log("Profile Error:", profileError);
-
+      
       if (profileError) {
         console.error("Profile fetch failed:", profileError);
         setTestResults(prev => ({ ...prev, profile: false }));
         return;
       }
 
-      // Profile exists check
-      if (profile) {
-        setTestResults(prev => ({ ...prev, profile: true }));
-      }
+      setTestResults(prev => ({ ...prev, profile: true }));
     } catch (error) {
       console.error("Unexpected error in Supabase test:", error);
     }

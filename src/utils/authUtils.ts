@@ -16,12 +16,7 @@ export const verifySession = async () => {
       return null;
     }
     
-    console.log('Session check result:', {
-      session: session ? 'Present' : 'None',
-      error: sessionError ? sessionError.message : 'None'
-    });
-
-    console.log('User authenticated:', {
+    console.log('Session verified successfully:', {
       id: session.user.id,
       email: session.user.email,
       lastSignIn: session.user.last_sign_in_at
@@ -36,35 +31,40 @@ export const verifySession = async () => {
 
 export const verifyProfile = async (userId: string) => {
   try {
-    // First try to fetch the profile
+    console.log('Verifying profile for user:', userId);
+    
+    // First try to fetch the profile using single() since we expect exactly one match
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', userId)
-      .maybeSingle();
+      .single();
 
     if (profileError) {
+      if (profileError.code === 'PGRST116') {
+        console.log('No profile found, attempting to create one');
+        // Profile doesn't exist, try to create one
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert([{ id: userId }])
+          .select('id')
+          .single();
+
+        if (insertError) {
+          console.error('Failed to create profile:', insertError);
+          toast.error('Failed to create user profile');
+          return null;
+        }
+
+        console.log('Profile created successfully:', newProfile);
+        return newProfile;
+      }
+      
       console.error('Profile verification failed:', profileError);
       return null;
     }
 
-    // If no profile exists, try to create one
-    if (!profile) {
-      console.log('No profile found, attempting to create one');
-      const { data: newProfile, error: insertError } = await supabase
-        .from('profiles')
-        .insert([{ id: userId }])
-        .select('id')
-        .single();
-
-      if (insertError) {
-        console.error('Failed to create profile:', insertError);
-        return null;
-      }
-
-      return newProfile;
-    }
-
+    console.log('Profile verified successfully:', profile);
     return profile;
   } catch (error) {
     console.error('Profile verification failed:', error);
@@ -93,11 +93,17 @@ export const handleSignOut = async () => {
 };
 
 export const getAuthErrorMessage = (error: AuthError) => {
+  if (error.message.includes('User already registered')) {
+    return 'This email is already registered. Please sign in instead.';
+  }
+  
   switch (error.message) {
     case 'Invalid login credentials':
       return 'Invalid email or password';
     case 'Email not confirmed':
       return 'Please verify your email address';
+    case 'missing email or phone':
+      return 'Please enter your email address';
     default:
       return error.message;
   }
