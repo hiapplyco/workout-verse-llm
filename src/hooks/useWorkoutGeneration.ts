@@ -69,10 +69,13 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
         body: { weeklyPrompt: createWeeklyPrompt(weeklyPrompt) }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error generating workouts:', error);
+        throw error;
+      }
 
       if (Array.isArray(data) && data.length === 5) {
-        const workoutsToUpdate = data.map((workout, index) => ({
+        const workoutsToInsert = data.map((workout, index) => ({
           id: crypto.randomUUID(),
           day: WEEKDAYS[index],
           warmup: workout.warmup,
@@ -81,13 +84,18 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
           user_id: session.user.id,
         }));
 
+        console.log('Inserting workouts:', workoutsToInsert);
+
         const { error: upsertError } = await supabase
           .from('workouts')
-          .upsert(workoutsToUpdate);
+          .upsert(workoutsToInsert);
 
-        if (upsertError) throw upsertError;
+        if (upsertError) {
+          console.error('Error upserting workouts:', upsertError);
+          throw upsertError;
+        }
 
-        setWorkouts(workoutsToUpdate);
+        setWorkouts(workoutsToInsert);
         setWeeklyPrompt("");
         toast.success("Weekly workout plan generated successfully!");
       } else {
