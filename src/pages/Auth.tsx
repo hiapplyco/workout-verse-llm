@@ -5,22 +5,30 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { AuthError } from "@supabase/supabase-js";
+import { useProfile } from "@/hooks/useProfile";
+import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
+  const { ensureProfile } = useProfile();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === "SIGNED_IN" && session) {
-          navigate("/");
+          const profileCreated = await ensureProfile(session.user.id);
+          if (profileCreated) {
+            navigate("/");
+          } else {
+            toast.error("Failed to create user profile");
+          }
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, ensureProfile]);
 
   const getErrorMessage = (error: AuthError) => {
     switch (error.message) {
