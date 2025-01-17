@@ -3,34 +3,60 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 export const verifySession = async () => {
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  
-  if (sessionError) {
-    console.error('Session verification failed:', sessionError);
+  try {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('Session verification failed:', sessionError);
+      return null;
+    }
+    
+    if (!session?.user) {
+      console.log('No active session found');
+      return null;
+    }
+    
+    console.log('Session check result:', {
+      session: session ? 'Present' : 'None',
+      error: sessionError ? sessionError.message : 'None'
+    });
+
+    console.log('User authenticated:', {
+      id: session.user.id,
+      email: session.user.email,
+      lastSignIn: session.user.last_sign_in_at
+    });
+    
+    return session;
+  } catch (error) {
+    console.error('Unexpected error during session verification:', error);
     return null;
   }
-  
-  if (!session?.user) {
-    console.log('No active session found');
-    return null;
-  }
-  
-  return session;
 };
 
 export const verifyProfile = async (userId: string) => {
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', userId)
-    .single();
+  try {
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
 
-  if (profileError) {
-    console.error('Profile verification failed:', profileError);
+    if (profileError) {
+      console.error('Profile verification failed:', profileError);
+      return null;
+    }
+
+    if (!profile) {
+      console.error('No profile found for user');
+      return null;
+    }
+
+    return profile;
+  } catch (error) {
+    console.error('Profile verification failed:', error);
     return null;
   }
-
-  return profile;
 };
 
 export const handleSignOut = async () => {

@@ -11,7 +11,10 @@ export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log('Setting up auth state change listener...');
+    
     const initAuth = async () => {
+      console.log('Checking user session...');
       try {
         const currentSession = await verifySession();
         
@@ -63,6 +66,7 @@ export const useAuth = () => {
       }
     });
 
+    console.log('Cleaning up auth state change listener');
     return () => {
       subscription.unsubscribe();
     };
