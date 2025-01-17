@@ -11,17 +11,34 @@ import { toast } from "sonner";
 const Auth = () => {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
+  const [isInitialized, setIsInitialized] = useState(false);
   const { ensureProfile, isLoading } = useProfile();
 
   useEffect(() => {
+    let mounted = true;
+
     // Check if we already have a session
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const profileCreated = await ensureProfile(session.user.id);
-        if (profileCreated) {
-          navigate("/");
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session check error:", error);
+          if (mounted) setErrorMessage(getErrorMessage(error));
+          return;
         }
+
+        if (session?.user && mounted) {
+          console.log("Session found, ensuring profile...");
+          const profileCreated = await ensureProfile(session.user.id);
+          if (profileCreated && mounted) {
+            navigate("/");
+          }
+        }
+      } catch (error) {
+        console.error("Session check failed:", error);
+      } finally {
+        if (mounted) setIsInitialized(true);
       }
     };
     
@@ -29,12 +46,14 @@ const Auth = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth state changed:", event, session); // Debug log
+        console.log("Auth state changed:", event, session);
+        
         if (event === "SIGNED_IN" && session) {
           try {
+            console.log("Sign in detected, ensuring profile...");
             const profileCreated = await ensureProfile(session.user.id);
-            if (profileCreated) {
-              console.log("Profile created, navigating to /"); // Debug log
+            if (profileCreated && mounted) {
+              console.log("Profile ensured, navigating to /");
               navigate("/", { replace: true });
             } else {
               toast.error("Failed to create user profile");
@@ -47,7 +66,10 @@ const Auth = () => {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate, ensureProfile]);
 
   const getErrorMessage = (error: AuthError) => {
@@ -63,7 +85,7 @@ const Auth = () => {
     }
   };
 
-  if (isLoading) {
+  if (!isInitialized || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center">
