@@ -26,7 +26,7 @@ const verifySession = async () => {
 const checkExistingProfile = async (userId: string) => {
   const { data: existingProfile, error: checkError } = await supabase
     .from('profiles')
-    .select('id')
+    .select()
     .eq('id', userId)
     .single();
 

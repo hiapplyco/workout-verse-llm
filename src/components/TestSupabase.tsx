@@ -14,8 +14,7 @@ export const TestSupabase = () => {
 
   const testSupabase = async () => {
     console.log("Starting Supabase test...");
-    console.log("Supabase Client:", supabase);
-
+    
     // Test 1: Session check
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
@@ -35,7 +34,7 @@ export const TestSupabase = () => {
     // Test 2: Profile fetch - using .single() for unique ID
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('id')
+      .select()
       .eq('id', session.user.id)
       .single();
 
@@ -45,8 +44,6 @@ export const TestSupabase = () => {
     if (profileData) {
       setTestResults(prev => ({ ...prev, profile: true }));
     }
-
-    return { session, profile: profileData };
   };
 
   // Run test on mount
