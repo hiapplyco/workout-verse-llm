@@ -8,6 +8,15 @@ export const AuthForm = () => {
       supabaseClient={supabase}
       appearance={{
         theme: ThemeSupa,
+        className: {
+          container: 'space-y-6',
+          label: 'font-sans font-semibold tracking-wide uppercase text-sm',
+          button: 'font-sans font-bold tracking-wider uppercase',
+          input: 'font-sans mt-2',
+          divider: 'my-8',
+          message: 'font-sans',
+          anchor: 'font-sans font-medium'
+        },
         variables: {
           default: {
             colors: {

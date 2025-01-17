@@ -9,7 +9,7 @@ interface AuthDialogProps {
 export const AuthDialog = ({ isOpen, onOpenChange }: AuthDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange} modal>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] p-6">
         <AuthForm />
       </DialogContent>
     </Dialog>
