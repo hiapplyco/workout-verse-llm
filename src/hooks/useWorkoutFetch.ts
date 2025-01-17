@@ -7,6 +7,7 @@ const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 export const useWorkoutFetch = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [hasShownWelcomeToast, setHasShownWelcomeToast] = useState(false);
 
   const sortWorkouts = (workoutsToSort: Workout[]) => {
     return workoutsToSort.sort((a, b) => {
@@ -26,10 +27,23 @@ export const useWorkoutFetch = () => {
         return;
       }
 
+      // First get the user's profile ID
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        toast.error('Failed to fetch user profile');
+        return;
+      }
+
       const { data: existingWorkouts, error: fetchError } = await supabase
         .from('workouts')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', profileData.id)
         .in('day', WEEKDAYS)
         .order('created_at', { ascending: false })
         .limit(5);
@@ -40,10 +54,11 @@ export const useWorkoutFetch = () => {
         return;
       }
 
-      if (!existingWorkouts?.length) {
+      if (!existingWorkouts?.length && !hasShownWelcomeToast) {
         console.log('No existing workouts found');
         toast.info('Welcome! Generate your weekly workout plan using the form above.');
-      } else {
+        setHasShownWelcomeToast(true);
+      } else if (existingWorkouts?.length) {
         console.log('Existing workouts found:', existingWorkouts);
         setWorkouts(sortWorkouts(existingWorkouts));
       }
