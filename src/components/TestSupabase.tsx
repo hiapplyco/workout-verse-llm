@@ -42,7 +42,7 @@ export const TestSupabase = () => {
         .from('profiles')
         .select('id')
         .eq('id', session.user.id)
-        .maybeSingle();
+        .single();
 
       console.log("Profile Data:", profile);
       console.log("Profile Error:", profileError);

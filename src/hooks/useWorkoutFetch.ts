@@ -17,7 +17,7 @@ export const useWorkoutFetch = () => {
         .from('profiles')
         .select('id')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
       if (profileError) {
         console.error('Profile fetch failed:', profileError);
