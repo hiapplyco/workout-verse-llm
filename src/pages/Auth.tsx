@@ -11,9 +11,22 @@ import { toast } from "sonner";
 const Auth = () => {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
-  const { ensureProfile } = useProfile();
+  const { ensureProfile, isLoading } = useProfile();
 
   useEffect(() => {
+    // Check if we already have a session
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const profileCreated = await ensureProfile(session.user.id);
+        if (profileCreated) {
+          navigate("/");
+        }
+      }
+    };
+    
+    checkSession();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === "SIGNED_IN" && session) {
@@ -42,6 +55,16 @@ const Auth = () => {
         return error.message;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-muted-foreground">Setting up your account...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
