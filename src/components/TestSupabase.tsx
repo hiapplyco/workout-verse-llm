@@ -37,26 +37,22 @@ export const TestSupabase = () => {
         setTestResults(prev => ({ ...prev, session: true }));
       }
 
-      // Test 2: Profile fetch - using .single() for unique ID
-      const { data: profileData, error: profileError } = await supabase
+      // Test 2: Profile check
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', session.user.id)
         .single();
 
-      console.log("Profile Data:", profileData);
+      console.log("Profile Data:", profile);
       console.log("Profile Error:", profileError);
 
       if (profileError) {
-        if (profileError.code === 'PGRST116') {
-          console.log("No profile found for user");
-        } else {
-          console.error("Profile fetch failed:", profileError);
-        }
+        console.error("Profile fetch failed:", profileError);
         return;
       }
 
-      if (profileData) {
+      if (profile) {
         setTestResults(prev => ({ ...prev, profile: true }));
       }
     } catch (error) {

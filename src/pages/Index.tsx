@@ -6,14 +6,12 @@ import { WeeklyPromptForm } from "@/components/WeeklyPromptForm";
 import { WorkoutList } from "@/components/WorkoutList";
 import { Welcome } from "@/components/Welcome";
 import { useWorkouts } from "@/hooks/useWorkouts";
-import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
 import { TestSupabase } from "@/components/TestSupabase";
 
 const Index = () => {
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement>(null);
-  const { verifyProfile } = useProfile();
   const {
     workouts,
     weeklyPrompt,
@@ -53,20 +51,12 @@ const Index = () => {
         lastSignIn: session.user.last_sign_in_at
       });
 
-      // Verify profile first
-      const profileVerified = await verifyProfile(session.user.id);
-      if (!profileVerified) {
-        console.error('Profile verification failed');
-        toast.error('Error setting up user profile');
-        return;
-      }
-
-      // Only fetch workouts if profile is verified
+      // Fetch workouts for authenticated user
       await fetchWorkouts(session.user.id);
     };
 
     checkUser();
-  }, [navigate, fetchWorkouts, verifyProfile]);
+  }, [navigate, fetchWorkouts]);
 
   // Add auth state change listener with logging
   useEffect(() => {
