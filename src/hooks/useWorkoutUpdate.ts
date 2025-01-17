@@ -5,7 +5,14 @@ import { Workout } from "@/types/workout";
 export const useWorkoutUpdate = (workouts: Workout[], setWorkouts: (workouts: Workout[]) => void) => {
   const handleChange = async (index: number, key: string, value: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        toast.error('Authentication error. Please sign in again.');
+        return;
+      }
+
       if (!session?.user) {
         toast.error('You must be logged in to update workouts');
         return;
@@ -15,14 +22,15 @@ export const useWorkoutUpdate = (workouts: Workout[], setWorkouts: (workouts: Wo
       newWorkouts[index] = { ...newWorkouts[index], [key]: value };
       setWorkouts(newWorkouts);
 
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('workouts')
         .update({ [key]: value })
         .eq('id', workouts[index].id)
-        .eq('user_id', session.user.id);
+        .eq('user_id', session.user.id)
+        .single();
 
-      if (error) {
-        console.error('Error updating workout:', error);
+      if (updateError) {
+        console.error('Error updating workout:', updateError);
         toast.error('Failed to save workout changes');
       }
     } catch (error) {

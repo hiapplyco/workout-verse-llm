@@ -84,7 +84,14 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
     }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        toast.error('Authentication error. Please sign in again.');
+        return;
+      }
+
       if (!session?.user) {
         toast.error('You must be logged in to generate workouts');
         return;
@@ -102,33 +109,56 @@ export const useWorkoutGeneration = (setWorkouts: (workouts: Workout[]) => void)
         throw error;
       }
 
-      if (Array.isArray(data) && data.length === 5) {
-        const workoutsToInsert = data.map((workout, index) => ({
-          id: crypto.randomUUID(),
-          day: WEEKDAYS[index],
-          warmup: workout.warmup,
-          wod: workout.wod,
-          notes: workout.notes,
-          user_id: session.user.id,
-        }));
-
-        console.log('Inserting workouts:', workoutsToInsert);
-
-        const { error: upsertError } = await supabase
-          .from('workouts')
-          .upsert(workoutsToInsert);
-
-        if (upsertError) {
-          console.error('Error upserting workouts:', upsertError);
-          throw upsertError;
-        }
-
-        setWorkouts(workoutsToInsert);
-        setWeeklyPrompt("");
-        toast.success("Weekly workout plan generated successfully!");
-      } else {
+      if (!Array.isArray(data) || data.length !== 5) {
         throw new Error('Invalid response format from generate-weekly-workouts');
       }
+
+      // First, delete existing workouts for the user
+      const { error: deleteError } = await supabase
+        .from('workouts')
+        .delete()
+        .eq('user_id', session.user.id);
+
+      if (deleteError) {
+        console.error('Error deleting existing workouts:', deleteError);
+        throw deleteError;
+      }
+
+      const workoutsToInsert = data.map((workout, index) => ({
+        id: crypto.randomUUID(),
+        day: WEEKDAYS[index],
+        warmup: workout.warmup,
+        wod: workout.wod,
+        notes: workout.notes,
+        user_id: session.user.id,
+      }));
+
+      console.log('Inserting workouts:', workoutsToInsert);
+
+      const { error: insertError } = await supabase
+        .from('workouts')
+        .insert(workoutsToInsert);
+
+      if (insertError) {
+        console.error('Error inserting workouts:', insertError);
+        throw insertError;
+      }
+
+      // Fetch the newly inserted workouts to ensure we have the correct data
+      const { data: insertedWorkouts, error: fetchError } = await supabase
+        .from('workouts')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (fetchError) {
+        console.error('Error fetching inserted workouts:', fetchError);
+        throw fetchError;
+      }
+
+      setWorkouts(insertedWorkouts);
+      setWeeklyPrompt("");
+      toast.success("Weekly workout plan generated successfully!");
     } catch (error) {
       console.error('Error generating weekly workouts:', error);
       toast.error("Failed to generate weekly workouts. Please try again.");

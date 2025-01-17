@@ -21,8 +21,14 @@ export const useWorkoutFetch = () => {
     console.log('Starting workout fetch for user:', userId);
     
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        toast.error('Authentication error. Please sign in again.');
+        return;
+      }
+
       if (!session) {
         console.error('No valid session found during workout fetch');
         toast.error('Please sign in to view workouts');
@@ -34,8 +40,7 @@ export const useWorkoutFetch = () => {
         .from('workouts')
         .select('*')
         .eq('user_id', userId)
-        .in('day', WEEKDAYS)
-        .order('created_at', { ascending: false });
+        .in('day', WEEKDAYS);
 
       if (fetchError) {
         console.error('Error fetching workouts:', fetchError);
