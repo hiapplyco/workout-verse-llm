@@ -26,14 +26,14 @@ export const TestSupabase = () => {
       return;
     }
 
-    if (session?.access_token) {
-      console.log("Access Token:", session.access_token);
-      setTestResults(prev => ({ ...prev, session: true }));
-    }
-
     if (!session?.user) {
       console.error("No session found");
       return;
+    }
+
+    if (session?.access_token) {
+      console.log("Access Token:", session.access_token);
+      setTestResults(prev => ({ ...prev, session: true }));
     }
 
     // Test 2: Profile fetch - using .single() for unique ID
